@@ -4,6 +4,8 @@
 */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp } from 'lucide-react';
+import { LogoProvider, useLogo } from './LogoContext';
+import SchoolLogoSettings from './SchoolLogoSettings';
 
 // Enhanced Tiptap imports - including all new extensions
 import { useEditor, EditorContent } from '@tiptap/react';
@@ -399,290 +401,308 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
           >
-            &lt;/&gt; HTML
-          </button>
+          HTML
+      </button>
         )}
-      </div>
+    </div>
 
-      {/* Enhanced Toolbar - Hidden in preview mode and HTML mode */}
-      {!isHtmlMode && !isPreviewMode && (
-        <div className="flex flex-wrap items-center gap-1 p-3 bg-white border-b border-gray-200">
-          {/* Font Family */}
-          <div className="flex items-center gap-1 mr-2">
-            <select
-              onChange={(e) => setFontFamily(e.target.value)}
-              className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
-              defaultValue=""
-            >
-              <option value="">Font Family</option>
-              <option value="Arial">Arial</option>
-              <option value="Helvetica">Helvetica</option>
-              <option value="Times New Roman">Times New Roman</option>
-              <option value="Courier New">Courier New</option>
-              <option value="Georgia">Georgia</option>
-              <option value="Verdana">Verdana</option>
-            </select>
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Text Formatting */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBold().run()}
-              className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bold') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Bold (Ctrl+B)"
-            >
-              <strong>B</strong>
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleItalic().run()}
-              className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('italic') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Italic (Ctrl+I)"
-            >
-              <em>I</em>
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleUnderline().run()}
-              className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('underline') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Underline (Ctrl+U)"
-            >
-              <u>U</u>
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleStrike().run()}
-              className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('strike') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Strikethrough"
-            >
-              <s>S</s>
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Text Color */}
-          <div className="flex items-center gap-1">
-            <input
-              type="color"
-              onChange={(e) => setTextColor(e.target.value)}
-              className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
-              title="Text Color"
-            />
-            <input
-              type="color"
-              onChange={(e) => setHighlightColor(e.target.value)}
-              className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
-              title="Highlight Color"
-            />
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Superscript/Subscript */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleSuperscript().run()}
-              className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('superscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Superscript"
-            >
-              X²
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleSubscript().run()}
-              className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('subscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Subscript"
-            >
-              X₁
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Headings */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().setParagraph().run()}
-              className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('paragraph') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-            >
-              P
-            </button>
-            {[1, 2, 3, 4].map((level) => (
-              <button
-                key={level}
-                type="button"
-                onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
-                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('heading', { level }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-              >
-                H{level}
-              </button>
-            ))}
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Lists */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBulletList().run()}
-              className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bulletList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-              title="Bullet List"
-            >
-              ●
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleOrderedList().run()}
-              className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('orderedList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-              title="Numbered List"
-            >
-              1.
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().toggleBlockquote().run()}
-              className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('blockquote') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-              title="Quote"
-            >
-              "
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Text Alignment */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().setTextAlign('left').run()}
-              className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-              title="Align Left"
-            >
-              ⇤
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().setTextAlign('center').run()}
-              className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-              title="Align Center"
-            >
-              ≡
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().setTextAlign('right').run()}
-              className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-              title="Align Right"
-            >
-              ⇥
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Table and More */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={addTable}
-              className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-              title="Insert Table"
-            >
-              📊 Table
-            </button>
-            <button
-              type="button"
-              onClick={setLink}
-              className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('link') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                }`}
-              title="Insert Link"
-            >
-              🔗 Link
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().setHorizontalRule().run()}
-              className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-              title="Horizontal Line"
-            >
-              —
-            </button>
-          </div>
-
-          <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-          {/* Clear and Undo/Redo */}
-          <div className="flex items-center gap-1">
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
-              className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-              title="Clear Formatting"
-            >
-              ✕ Clear
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().undo().run()}
-              disabled={!editor.can().undo()}
-              className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Undo"
-            >
-              ↶
-            </button>
-            <button
-              type="button"
-              onClick={() => editor.chain().focus().redo().run()}
-              disabled={!editor.can().redo()}
-              className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              title="Redo"
-            >
-              ↷
-            </button>
-          </div>
+      {/* Enhanced Toolbar - Hidden in preview mode and HTML mode */ }
+  {
+    !isHtmlMode && !isPreviewMode && (
+      <div className="flex flex-wrap items-center gap-1 p-3 bg-white border-b border-gray-200">
+        {/* Font Family */}
+        <div className="flex items-center gap-1 mr-2">
+          <select
+            onChange={(e) => setFontFamily(e.target.value)}
+            className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+            defaultValue=""
+          >
+            <option value="">Font Family</option>
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Georgia">Georgia</option>
+            <option value="Verdana">Verdana</option>
+          </select>
         </div>
-      )}
 
-      {/* Editor Area */}
-      {isHtmlMode ? (
-        <textarea
-          value={htmlContent}
-          onChange={(e) => handleHtmlChange(e.target.value)}
-          className="flex-1 p-4 border-none resize-none focus:outline-none font-mono text-sm min-h-20 max-h-96"
-          placeholder="Enter HTML content..."
-        />
-      ) : (
-        <div className="flex-1 min-h-20 max-h-96 overflow-y-auto">
-          <EditorContent
-            editor={editor}
-            className="prose prose-sm max-w-none p-4 focus:outline-none rich-editor-content min-h-16"
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Text Formatting */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBold().run()}
+            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bold') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Bold (Ctrl+B)"
+          >
+            <strong>B</strong>
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleItalic().run()}
+            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('italic') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Italic (Ctrl+I)"
+          >
+            <em>I</em>
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleUnderline().run()}
+            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('underline') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Underline (Ctrl+U)"
+          >
+            <u>U</u>
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleStrike().run()}
+            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('strike') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Strikethrough"
+          >
+            <s>S</s>
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Text Color */}
+        <div className="flex items-center gap-1">
+          <input
+            type="color"
+            onChange={(e) => setTextColor(e.target.value)}
+            className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
+            title="Text Color"
+          />
+          <input
+            type="color"
+            onChange={(e) => setHighlightColor(e.target.value)}
+            className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
+            title="Highlight Color"
           />
         </div>
-      )}
-    </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Superscript/Subscript */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleSuperscript().run()}
+            className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('superscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Superscript"
+          >
+            X²
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleSubscript().run()}
+            className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('subscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Subscript"
+          >
+            X₁
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Headings */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setParagraph().run()}
+            className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('paragraph') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+          >
+            P
+          </button>
+          {[1, 2, 3, 4].map((level) => (
+            <button
+              key={level}
+              type="button"
+              onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
+              className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('heading', { level }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                }`}
+            >
+              H{level}
+            </button>
+          ))}
+        </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Lists */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bulletList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+            title="Bullet List"
+          >
+            ●
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleOrderedList().run()}
+            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('orderedList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+            title="Numbered List"
+          >
+            1.
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().toggleBlockquote().run()}
+            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('blockquote') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+            title="Quote"
+          >
+            "
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Text Alignment */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign('left').run()}
+            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+            title="Align Left"
+          >
+            ⇤
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign('center').run()}
+            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+            title="Align Center"
+          >
+            ≡
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setTextAlign('right').run()}
+            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+              }`}
+            title="Align Right"
+          >
+            ⇥
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Table and More */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={addTable}
+            className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+            title="Insert Table"
+          >
+            📊 Table
+          </button>
+          <button
+            type="button"
+            onClick={setLink}
+            className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('link') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+              }`}
+            title="Insert Link"
+          >
+            🔗 Link
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().setHorizontalRule().run()}
+            className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+            title="Horizontal Line"
+          >
+            —
+          </button>
+        </div>
+
+        <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+        {/* Clear and Undo/Redo */}
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+            className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+            title="Clear Formatting"
+          >
+            ✕ Clear
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().undo().run()}
+            disabled={!editor.can().undo()}
+            className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Undo"
+          >
+            ↶
+          </button>
+          <button
+            type="button"
+            onClick={() => editor.chain().focus().redo().run()}
+            disabled={!editor.can().redo()}
+            className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            title="Redo"
+          >
+            ↷
+          </button>
+        </div>
+      </div>
+    )
+  }
+
+  {/* Editor Area */ }
+  {
+    isHtmlMode ? (
+      <textarea
+        value={htmlContent}
+        onChange={(e) => handleHtmlChange(e.target.value)}
+        className="flex-1 p-4 border-none resize-none focus:outline-none font-mono text-sm min-h-20 max-h-96"
+        placeholder="Enter HTML content..."
+      />
+    ) : (
+      <div className="flex-1 min-h-20 max-h-96 overflow-y-auto">
+        <EditorContent
+          editor={editor}
+          className="prose prose-sm max-w-none p-4 focus:outline-none rich-editor-content min-h-16"
+        />
+      </div>
+    )
+  }
+    </div >
   );
 };
+
+// App.js (near your imports)
+const studentFriendlyTitles = {
+  'bridge-in': 'Getting Started',
+  'outcomes': "What You’ll Learn Today",
+  'pre-assessment': 'Quick Check-In',
+  'participatory-learning': 'Let’s Dive In',
+  'post-assessment': 'Your Turn: Show What You Know',
+  'summary': 'Key Takeaways',
+  // you can add Resources & Materials or Overview if you like:
+  'overview': 'Session Overview',
+  'resources': 'Resources & Materials',
+};
+
 
 // Audio Player Component
 const AudioPlayer = ({ src, description, citation }) => {
@@ -1078,32 +1098,49 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
 
   const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600', hover: 'hover:bg-slate-700' };
 
+  const headerLabel = studentFriendlyTitles[section.id]
+    ? `${section.title} (${studentFriendlyTitles[section.id]})`
+    : section.title;
+
   return (
-    <div id={section.id} className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden transition-all duration-200 hover:shadow-md print-break-inside-avoid">
+    <div
+      id={section.id}
+      className="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden transition-all duration-200 hover:shadow-md print-break-inside-avoid"
+    >
       <div
         className={`${colorConfig.bg} ${colorConfig.hover} text-white px-8 py-6 cursor-pointer flex justify-between items-center relative overflow-hidden transition-colors no-print`}
         onClick={onToggle}
       >
-        <h2 className="text-xl font-semibold">{section.title}</h2>
+        <h2 className="text-xl font-semibold">
+          {headerLabel}
+        </h2>
+
         <div className="flex items-center gap-3">
-          {isEditMode && section.id !== 'overview' && section.id !== 'resources' && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm(`Are you sure you want to delete the entire "${section.title}" section?`)) {
-                  onDeleteSection(section.id);
-                }
-              }}
-              className="w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition-colors"
-            >
-              <Trash2 size={16} />
-            </button>
-          )}
+          {isEditMode &&
+            section.id !== 'overview' &&
+            section.id !== 'resources' && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (
+                    window.confirm(
+                      `Are you sure you want to delete the entire "${section.title}" section?`
+                    )
+                  ) {
+                    onDeleteSection(section.id);
+                  }
+                }}
+                className="w-8 h-8 bg-red-500 text-white rounded-lg flex items-center justify-center hover:bg-red-600 transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           <div className={`transition-transform duration-300 ${isOpen ? 'rotate-90' : ''}`}>
             <ChevronRight size={20} />
           </div>
         </div>
       </div>
+
 
       <div className={`accordion-content-wrapper ${isOpen ? 'is-open' : ''}`}>
         {/* This inner div is essential for the grid animation to work correctly */}
@@ -1161,6 +1198,7 @@ const ControlPanel = ({
   onDateChange,
   isOpen,
   onToggle,
+  onOpenLogoSettings,
   hasUnsavedChanges,
   lastSaved,
   sections,
@@ -1223,6 +1261,17 @@ const ControlPanel = ({
 
         <div className="h-px bg-gray-200 my-4"></div>
 
+        {/* NEW: Logo Settings Button */}
+        <button
+          onClick={onOpenLogoSettings}
+          className="w-full p-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
+        >
+          <Settings size={16} />
+          School Logo Settings
+        </button>
+
+        <div className="h-px bg-gray-200 my-4"></div>
+
         <div className="space-y-3">
           <button onClick={onExportPDF} className="w-full p-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors shadow-sm">
             <Download size={16} />
@@ -1263,17 +1312,29 @@ const ControlPanel = ({
         </button>
 
         <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Add Content to Section:</label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Add Content to Section:
+          </label>
           <select
             value={defaultSection}
             onChange={(e) => onDefaultSectionChange(e.target.value)}
             className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
           >
-            {sections.map(section => (
-              <option key={section.id} value={section.id}>{section.title}</option>
-            ))}
+            {sections.map((section) => {
+              const student = studentFriendlyTitles[section.id];
+              const label = student
+                ? `${section.title} (${student})`
+                : section.title;
+
+              return (
+                <option key={section.id} value={section.id}>
+                  {label}
+                </option>
+              );
+            })}
           </select>
         </div>
+
 
         <div className="grid grid-cols-2 gap-2">
           <button onClick={() => onAddContent('video')} className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 text-sm transition-colors">
@@ -2077,6 +2138,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
   );
 };
 
+
 // Main Application Component
 const LectureTemplateSystem = () => {
   const [isEditMode, setIsEditMode] = useState(false);
@@ -2092,6 +2154,11 @@ const LectureTemplateSystem = () => {
   const [defaultSection, setDefaultSection] = useState('overview');
   const [activeSectionId, setActiveSectionId] = useState('');
   const [openSectionIds, setOpenSectionIds] = useState(['overview']); // Can hold multiple IDs
+
+  const [showLogoSettings, setShowLogoSettings] = useState(false);
+
+  // NEW: Use the logo context
+  const { getLogoHtml, hasLogo } = useLogo();
 
   // Header data
   const [headerData, setHeaderData] = useState({
@@ -2515,39 +2582,59 @@ const LectureTemplateSystem = () => {
 
   const handleExportHTML = () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
+    const logoHtml = getLogoHtml('logo');
 
     const headerHtml = `
-      <header class="bg-white border-b border-gray-200 shadow-sm">
-        <div class="max-w-7xl mx-auto px-6 py-12">
-          <div class="flex justify-between items-start">
-            <div>
-              <h1 class="text-4xl font-bold text-gray-900 mb-3">${headerData.courseTopic.replace(/Week \d+/, `Week ${week}`)}</h1>
-              <p class="text-xl text-gray-600">${displayDate}</p>
-            </div>
-            <div class="text-right">
-              <p class="text-lg font-medium text-gray-800">${headerData.instructorName}</p>
-              <p class="text-lg text-gray-600">${headerData.instructorEmail}</p>
-            </div>
-          </div>
-        </div>
-      </header>
-    `;
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-6 py-12">
+      <div class="flex items-center justify-between space-x-6">
+        <!-- Logo on the left -->
+        ${logoHtml ? `<div class="flex-shrink-0">${logoHtml}</div>` : ''}
 
-    const navHtml = `
-      <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-6">
-          <ul class="flex justify-center gap-1 py-2 flex-wrap">
-            ${sections.map(section => `
-              <li>
-                <a href="#${section.id}" class="px-4 py-2 rounded-t-lg transition-all font-medium text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100">
-                  ${section.title}
-                </a>
-              </li>
-            `).join('')}
-          </ul>
+        <!-- Title & date in center -->
+        <div class="flex-1 text-center md:text-left">
+          <h1 class="text-4xl font-bold text-gray-900">
+            ${headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`)}
+          </h1>
+          <p class="text-lg text-gray-600">${displayDate}</p>
         </div>
-      </nav>
-    `;
+
+        <!-- Instructor on the right -->
+        <div class="flex-shrink-0 text-right">
+          <p class="font-medium text-gray-800">${headerData.instructorName}</p>
+          <p class="text-gray-600">${headerData.instructorEmail}</p>
+        </div>
+      </div>
+    </div>
+  </header>
+`;
+
+
+    // inside handleExportHTML (App.js)
+    const navHtml = `
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-8xl mx-auto px-6">
+    <ul class="flex justify-center gap-1 py-2 flex-wrap">
+      ${sections.map(section => {
+      // only student-friendly label (fallback to formal if missing)
+      const label = studentFriendlyTitles[section.id] || section.title;
+      return `
+        <li>
+          <a
+            href="#${section.id}"
+            class="px-4 py-2 rounded-t-lg transition-all font-medium text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+          >
+            ${label}
+          </a>
+        </li>`;
+    }).join('')}
+    </ul>
+  </div>
+</nav>
+`;
+
+
+
 
     const sectionColors = {
       'overview': { bg: 'bg-slate-600' }, 'bridge-in': { bg: 'bg-red-500' },
@@ -2556,30 +2643,33 @@ const LectureTemplateSystem = () => {
       'summary': { bg: 'bg-indigo-500' }, 'resources': { bg: 'bg-gray-600' }
     };
 
-    // Replaced with your improved sections generation logic
-    const sectionsHtml = sections.map((section, index) => {
+    // inside handleExportHTML (App.js)
+    const sectionsHtml = sections.map(section => {
+      const label = studentFriendlyTitles[section.id] || section.title;
       const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
       const blocksHtml = section.blocks.map(getBlockHtml).join('');
-      const isFirstSection = index === 0; // Only first section starts open
-      const initialState = isFirstSection ? '' : 'closed';
-      const iconRotation = isFirstSection ? 'rotated' : '';
 
       return `
-        <div id="${section.id}" class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
-            <div class="section-header ${colorConfig.bg} text-white px-8 py-6 cursor-pointer flex justify-between items-center">
-                <h2 class="text-xl font-semibold">${section.title}</h2>
-                <div class="toggle-icon ${iconRotation}">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </div>
-            </div>
-            <div class="content-container ${initialState}">
-                <div>
-                    <div class="p-8">${blocksHtml}</div>
-                </div>
-            </div>
+  <div id="${section.id}" class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
+    <div class="${colorConfig.bg} text-white px-8 py-6 cursor-pointer flex justify-between items-center section-header">
+      <h2 class="text-xl font-semibold">${label}</h2>
+      <div class="toggle-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+    </div>
+    <div class="content-container closed">
+      <div>
+        <div class="p-8">
+          ${blocksHtml}
         </div>
-      `;
+      </div>
+    </div>
+  </div>`;
     }).join('');
+
 
     const footerHtml = `
       <footer class="bg-gray-900 text-white py-8 mt-16">
@@ -2662,6 +2752,13 @@ const LectureTemplateSystem = () => {
 
     const fixedStyles = `
       <style>
+        .logo {
+            max-height: 80px;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
         .toggle-icon { 
             transition: transform 0.3s ease-in-out; 
         }
@@ -3001,7 +3098,7 @@ const LectureTemplateSystem = () => {
       {/* Control Panel Toggle Button */}
       <button
         onClick={() => setIsControlPanelOpen(!isControlPanelOpen)}
-        className={`fixed top-6 z-50 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print ${isControlPanelOpen ? 'right-96' : 'right-6'
+        className={`fixed top-6 z-50 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'
           }`}
       >
         <Settings size={20} />
@@ -3027,57 +3124,42 @@ const LectureTemplateSystem = () => {
         sections={sections}
         defaultSection={defaultSection}
         onDefaultSectionChange={setDefaultSection}
+        onOpenLogoSettings={() => setShowLogoSettings(true)}
       />
 
-      {/* Header */}
       <header className="bg-white border-b border-gray-200 shadow-sm print-break-inside-avoid">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="flex justify-between items-start">
-            <div>
+          <div className="flex items-center justify-between space-x-6">
+            {/* 1) Logo on the left */}
+            {hasLogo && (
+              <div
+                className="flex-shrink-0"
+                dangerouslySetInnerHTML={{ __html: getLogoHtml('max-h-20') }}
+              />
+            )}
+
+            {/* 2) Course title & date in the middle */}
+            <div className="flex-1">
               <h1
-                className={`text-4xl font-bold text-gray-900 mb-3 ${isEditMode ? 'outline-blue-200 outline-dashed outline-2 rounded-md px-2' : ''}`}
-                contentEditable={isEditMode}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => handleHeaderDataChange('courseTopic', e.target.innerText)}
+                className="text-4xl font-bold text-gray-900"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={e => handleHeaderDataChange('courseTopic', e.currentTarget.textContent)}
               >
-                {headerData.courseTopic.replace(/Week \d+/, `Week ${week}`)}
+                {headerData.courseTopic}
               </h1>
-              <p className="text-xl text-gray-600">{displayDate}</p>
+              <p className="text-lg text-gray-600">Monday, September 8, 2025</p>
             </div>
-            <div className="text-right">
-              {/* ===== ADD THIS BUTTON ===== */}
-              {isEditMode && (
-                <button
-                  onClick={handleToggleAllSections}
-                  className="mb-2 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 ml-auto"
-                >
-                  {openSectionIds.length > 0 ? (
-                    <>
-                      <ChevronUp size={16} />
-                      Collapse All
-                    </>
-                  ) : (
-                    <>
-                      <ChevronDown size={16} />
-                      Expand All
-                    </>
-                  )}
-                </button>
-              )}
-              {/* ===== END OF ADDITION ===== */}
+
+            {/* 3) Instructor info on the right */}
+            <div className="flex-shrink-0 text-right">
+              
+               <p className="font-medium text-gray-800">Instructor Email</p>
               <p
-                className={`text-lg font-medium text-gray-800 ${isEditMode ? 'outline-blue-200 outline-dashed outline-2 rounded-md px-2' : ''}`}
-                contentEditable={isEditMode}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => handleHeaderDataChange('instructorName', e.target.innerText)}
-              >
-                {headerData.instructorName}
-              </p>
-              <p
-                className={`text-lg text-gray-600 ${isEditMode ? 'outline-blue-200 outline-dashed outline-2 rounded-md px-2' : ''}`}
-                contentEditable={isEditMode}
-                suppressContentEditableWarning={true}
-                onBlur={(e) => handleHeaderDataChange('instructorEmail', e.target.innerText)}
+                className="text-gray-600"
+                contentEditable
+                suppressContentEditableWarning
+                onBlur={e => handleHeaderDataChange('instructorEmail', e.currentTarget.textContent)}
               >
                 {headerData.instructorEmail}
               </p>
@@ -3085,6 +3167,8 @@ const LectureTemplateSystem = () => {
           </div>
         </div>
       </header>
+
+
 
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 no-print">
@@ -3139,6 +3223,11 @@ const LectureTemplateSystem = () => {
         onSave={handleModalSave}
         initialData={modalInitialData}
       />
+
+      {/* School Logo Settings Modal */}
+      {showLogoSettings && (
+        <SchoolLogoSettings onClose={() => setShowLogoSettings(false)} />
+      )}
 
       {/* Back to Top Button */}
       <button
@@ -3224,36 +3313,35 @@ const LectureTemplateSystem = () => {
         }
 
         .accordion-content-wrapper {
-          display: grid;
-          grid-template-rows: 0fr;
-          transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
-          opacity: 0;
-        }
-        .accordion-content-wrapper.is-open {
-          grid-template-rows: 1fr;
-          opacity: 1;
-        }
-        .accordion-content-wrapper > div {
-          overflow: hidden;
-        }
-        /* ===== ADD THESE STYLES ===== */
-        .accordion-content-wrapper {
-          display: grid;
-          grid-template-rows: 0fr;
-          transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
-          opacity: 0;
-        }
-        .accordion-content-wrapper.is-open {
-          grid-template-rows: 1fr;
-          opacity: 1;
-        }
-        .accordion-content-wrapper > div {
-          overflow: hidden;
-        }
-        /* ===== END OF ADDITION ===== */
+    display: grid;
+    grid-template-rows: 0fr;
+    transition: 
+      grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1),
+      opacity 0.5s ease-out;
+    opacity: 0;
+    overflow: hidden;
+  }
+
+  .accordion-content-wrapper.is-open {
+    grid-template-rows: 1fr;
+    opacity: 1;
+  }
+
+  .accordion-content-wrapper > div {
+    min-height: 0;
+    overflow: hidden;
+  }
       `}</style>
     </div>
   );
 };
 
-export default LectureTemplateSystem;
+const App = () => {
+  return (
+    <LogoProvider>
+      <LectureTemplateSystem />
+    </LogoProvider>
+  );
+};
+
+export default App;

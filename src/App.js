@@ -1204,6 +1204,9 @@ const ControlPanel = ({
   sections,
   defaultSection,
   onDefaultSectionChange,
+  instructorName,
+  instructorEmail,
+  onHeaderDataChange,
 }) => (
   <div className={`fixed top-6 right-6 z-50 transition-all duration-300 no-print ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
     <div className="bg-white rounded-2xl shadow-xl border border-gray-200 min-w-80 max-w-96">
@@ -1238,6 +1241,26 @@ const ControlPanel = ({
               <option key={i + 1} value={i + 1}>Week {i + 1}</option>
             ))}
           </select>
+
+          {/* Instructor Info */}
+          <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Instructor Name</label>
+            <input
+              type="text"
+              value={instructorName}
+              onChange={e => onHeaderDataChange('instructorName', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent mb-4"
+            />
+
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Instructor Email</label>
+            <input
+              type="email"
+              value={instructorEmail}
+              onChange={e => onHeaderDataChange('instructorEmail', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+            />
+          </div>
+
 
           <label className="block text-sm font-semibold text-gray-700 mb-2">Date:</label>
           <input
@@ -2584,30 +2607,38 @@ const LectureTemplateSystem = () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
     const logoHtml = getLogoHtml('logo');
 
+    // inside handleExportHTML (App.js)
     const headerHtml = `
   <header class="bg-white border-b border-gray-200">
     <div class="max-w-7xl mx-auto px-6 py-12">
-      <div class="flex items-center justify-between space-x-6">
-        <!-- Logo on the left -->
-        ${logoHtml ? `<div class="flex-shrink-0">${logoHtml}</div>` : ''}
+      <div class="flex items-start justify-between space-x-6">
 
-        <!-- Title & date in center -->
+        <!-- ← LEFT COLUMN: Date over Logo -->
+        <div class="flex flex-col items-center md:items-start space-y-3">
+          <p class="text-lg text-gray-600">${displayDate}</p>
+          ${logoHtml ? `<div class="logo">${logoHtml}</div>` : ''}
+        </div>
+
+        <!-- ← MIDDLE COLUMN: Title -->
         <div class="flex-1 text-center md:text-left">
           <h1 class="text-4xl font-bold text-gray-900">
             ${headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`)}
           </h1>
-          <p class="text-lg text-gray-600">${displayDate}</p>
         </div>
 
-        <!-- Instructor on the right -->
-        <div class="flex-shrink-0 text-right">
-          <p class="font-medium text-gray-800">${headerData.instructorName}</p>
-          <p class="text-gray-600">${headerData.instructorEmail}</p>
+        <!-- ← RIGHT COLUMN: Instructor Info -->
+        <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 items-center flex-shrink-0">
+          <span class="font-medium text-gray-800 text-right">Instructor:</span>
+          <span class="text-gray-600">${headerData.instructorName}</span>
+          <span class="font-medium text-gray-800 text-right">Email:</span>
+          <span class="text-gray-600">${headerData.instructorEmail}</span>
         </div>
+
       </div>
     </div>
   </header>
 `;
+
 
 
     // inside handleExportHTML (App.js)
@@ -3125,21 +3156,28 @@ const LectureTemplateSystem = () => {
         defaultSection={defaultSection}
         onDefaultSectionChange={setDefaultSection}
         onOpenLogoSettings={() => setShowLogoSettings(true)}
+        instructorName={headerData.instructorName}
+        instructorEmail={headerData.instructorEmail}
+        onHeaderDataChange={handleHeaderDataChange}
       />
 
       <header className="bg-white border-b border-gray-200 shadow-sm print-break-inside-avoid">
         <div className="max-w-7xl mx-auto px-6 py-12">
-          <div className="flex items-center justify-between space-x-6">
-            {/* 1) Logo on the left */}
-            {hasLogo && (
-              <div
-                className="flex-shrink-0"
-                dangerouslySetInnerHTML={{ __html: getLogoHtml('max-h-20') }}
-              />
-            )}
+          <div className="flex items-start justify-between space-x-6">
 
-            {/* 2) Course title & date in the middle */}
-            <div className="flex-1">
+            {/* ← LEFT COLUMN: Date over Logo */}
+            <div className="flex flex-col items-center md:items-start space-y-3">
+              <p className="text-lg text-gray-600">{displayDate}</p>
+              {hasLogo && (
+                <div
+                  className="flex-shrink-0"
+                  dangerouslySetInnerHTML={{ __html: getLogoHtml('max-h-20') }}
+                />
+              )}
+            </div>
+
+            {/* ← MIDDLE COLUMN: Title */}
+            <div className="flex-1 text-center md:text-left">
               <h1
                 className="text-4xl font-bold text-gray-900"
                 contentEditable
@@ -3148,25 +3186,37 @@ const LectureTemplateSystem = () => {
               >
                 {headerData.courseTopic}
               </h1>
-              <p className="text-lg text-gray-600">Monday, September 8, 2025</p>
             </div>
 
-            {/* 3) Instructor info on the right */}
-            <div className="flex-shrink-0 text-right">
-              
-               <p className="font-medium text-gray-800">Instructor Email</p>
-              <p
-                className="text-gray-600"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={e => handleHeaderDataChange('instructorEmail', e.currentTarget.textContent)}
-              >
-                {headerData.instructorEmail}
-              </p>
+            {/* ← RIGHT COLUMN: Instructor Info */}
+            <div className="flex-shrink-0">
+              <div className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 items-center">
+                <span className="font-medium text-gray-800 text-right">Instructor:</span>
+                <p
+                  className="text-gray-600"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={e => handleHeaderDataChange('instructorName', e.currentTarget.textContent)}
+                >
+                  {headerData.instructorName}
+                </p>
+
+                <span className="font-medium text-gray-800 text-right">Email:</span>
+                <p
+                  className="text-gray-600"
+                  contentEditable
+                  suppressContentEditableWarning
+                  onBlur={e => handleHeaderDataChange('instructorEmail', e.currentTarget.textContent)}
+                >
+                  {headerData.instructorEmail}
+                </p>
+              </div>
             </div>
+
           </div>
         </div>
       </header>
+
 
 
 

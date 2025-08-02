@@ -1,0 +1,2459 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Global Styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Print Styles */
+@media print {
+  .no-print,
+  .no-print * {
+    display: none !important;
+  }
+  
+  body {
+    background: white !important;
+  }
+  
+  .print-break-inside-avoid {
+    break-inside: avoid;
+  }
+  
+  .print-break-before {
+    break-before: page;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Rich Text Editor Styles */
+.rich-editor-content {
+  outline: none;
+}
+
+.rich-editor-content h1,
+.rich-editor-content h2,
+.rich-editor-content h3,
+.rich-editor-content h4,
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h1 { font-size: 2em; }
+.rich-editor-content h2 { font-size: 1.5em; }
+.rich-editor-content h3 { font-size: 1.25em; }
+.rich-editor-content h4 { font-size: 1.1em; }
+
+.rich-editor-content p {
+  margin-bottom: 1em;
+  line-height: 1.6;
+}
+
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin-bottom: 1em;
+  padding-left: 1.5em;
+}
+
+.rich-editor-content li {
+  margin-bottom: 0.5em;
+}
+
+.rich-editor-content a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+}
+
+.rich-editor-content strong {
+  font-weight: 600;
+}
+
+.rich-editor-content em {
+  font-style: italic;
+}
+
+/* Animation Classes */
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.3s ease-out;
+}
+
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(20px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* Drag and Drop Styles */
+.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg) scale(0.98);
+}
+
+.drag-over {
+  border-color: #3b82f6 !important;
+  background-color: rgba(59, 130, 246, 0.1) !important;
+}
+/* Enhanced Rich Text Editor Styles - Add these to your existing index.css */
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced Lists */
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 1em 0;
+}
+
+.rich-editor-content li {
+  margin-bottom: 0.25em;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced List Styling */
+.rich-editor-content ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+}
+
+.rich-editor-content ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+}
+
+/* Toolbar Enhancement - for better integration with your design */
+.rich-editor-content .toolbar-dropdown {
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  border-radius: 0.375rem;
+  background-color: white;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Using your custom medium shadow */
+}
+
+.rich-editor-content .toolbar-dropdown:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}
+/* Enhanced Rich Text Editor Styles - Add these to your existing index.css */
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced Lists */
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 1em 0;
+}
+
+.rich-editor-content li {
+  margin-bottom: 0.25em;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced List Styling */
+.rich-editor-content ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+}
+
+.rich-editor-content ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced Lists */
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 1em 0;
+}
+
+.rich-editor-content li {
+  margin-bottom: 0.25em;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced List Styling */
+.rich-editor-content ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+}
+
+.rich-editor-content ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+}
+
+/* Toolbar Enhancement - for better integration with your design */
+.rich-editor-content .toolbar-dropdown {
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  border-radius: 0.375rem;
+  background-color: white;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Using your custom medium shadow */
+}
+
+.rich-editor-content .toolbar-dropdown:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}
+/* Enhanced Rich Text Editor Styles - Add these to your existing index.css */
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced Lists - Apply to both editor and preview */
+.rich-editor-content ul,
+.rich-editor-content ol,
+.prose ul,
+.prose ol,
+[dangerouslySetInnerHTML] ul,
+[dangerouslySetInnerHTML] ol {
+  margin: 1em 0;
+  padding-left: 1.5em;
+  list-style-position: outside;
+}
+
+.rich-editor-content ul,
+.prose ul,
+[dangerouslySetInnerHTML] ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol,
+.prose ol,
+[dangerouslySetInnerHTML] ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content li,
+.prose li,
+[dangerouslySetInnerHTML] li {
+  margin-bottom: 0.25em;
+  display: list-item;
+}
+
+.rich-editor-content ul ul,
+.prose ul ul,
+[dangerouslySetInnerHTML] ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.rich-editor-content ol ol,
+.prose ol ol,
+[dangerouslySetInnerHTML] ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.rich-editor-content ul ol,
+.prose ul ol,
+[dangerouslySetInnerHTML] ul ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ol ul,
+.prose ol ul,
+[dangerouslySetInnerHTML] ol ul {
+  list-style-type: disc;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Override Tailwind Prose defaults for lists to ensure they display properly */
+.prose ul {
+  list-style-type: disc !important;
+  margin-top: 1em !important;
+  margin-bottom: 1em !important;
+  padding-left: 1.5em !important;
+}
+
+.prose ol {
+  list-style-type: decimal !important;
+  margin-top: 1em !important;
+  margin-bottom: 1em !important;
+  padding-left: 1.5em !important;
+}
+
+.prose li {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+.prose ul>li {
+  list-style-type: disc !important;
+  display: list-item !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.prose ol>li {
+  list-style-type: decimal !important;
+  display: list-item !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced Lists */
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 1em 0;
+}
+
+.rich-editor-content li {
+  margin-bottom: 0.25em;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced List Styling */
+.rich-editor-content ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+}
+
+.rich-editor-content ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+}
+
+/* Toolbar Enhancement - for better integration with your design */
+.rich-editor-content .toolbar-dropdown {
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  border-radius: 0.375rem;
+  background-color: white;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Using your custom medium shadow */
+}
+
+.rich-editor-content .toolbar-dropdown:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}
+/* Enhanced Rich Text Editor Styles - Add these to your existing index.css */
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Editor Sizing */
+.rich-editor-content .ProseMirror {
+  min-height: 3rem;
+  /* Smaller minimum height for single lines */
+  padding: 0.75rem;
+  line-height: 1.5;
+  resize: vertical;
+}
+
+/* Auto-expand editor based on content */
+.rich-editor-content .ProseMirror:focus {
+  min-height: 4rem;
+  /* Slightly larger when focused */
+}
+
+/* For content blocks with minimal content */
+.rich-editor-content .ProseMirror:empty::before {
+  content: attr(data-placeholder);
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+  float: left;
+}
+
+/* Enhanced Lists - Apply to both editor and preview */
+.rich-editor-content ul,
+.rich-editor-content ol,
+.prose ul,
+.prose ol,
+[dangerouslySetInnerHTML] ul,
+[dangerouslySetInnerHTML] ol {
+  margin: 1em 0;
+  padding-left: 1.5em;
+  list-style-position: outside;
+}
+
+.rich-editor-content ul,
+.prose ul,
+[dangerouslySetInnerHTML] ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol,
+.prose ol,
+[dangerouslySetInnerHTML] ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content li,
+.prose li,
+[dangerouslySetInnerHTML] li {
+  margin-bottom: 0.25em;
+  display: list-item;
+}
+
+.rich-editor-content ul ul,
+.prose ul ul,
+[dangerouslySetInnerHTML] ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.rich-editor-content ol ol,
+.prose ol ol,
+[dangerouslySetInnerHTML] ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+  margin-bottom: 0.5em;
+}
+
+.rich-editor-content ul ol,
+.prose ul ol,
+[dangerouslySetInnerHTML] ul ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ol ul,
+.prose ol ul,
+[dangerouslySetInnerHTML] ol ul {
+  list-style-type: disc;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Override Tailwind Prose defaults for lists to ensure they display properly */
+.prose ul {
+  list-style-type: disc !important;
+  margin-top: 1em !important;
+  margin-bottom: 1em !important;
+  padding-left: 1.5em !important;
+}
+
+.prose ol {
+  list-style-type: decimal !important;
+  margin-top: 1em !important;
+  margin-bottom: 1em !important;
+  padding-left: 1.5em !important;
+}
+
+.prose li {
+  margin-top: 0.25em !important;
+  margin-bottom: 0.25em !important;
+}
+
+.prose ul>li {
+  list-style-type: disc !important;
+  display: list-item !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+.prose ol>li {
+  list-style-type: decimal !important;
+  display: list-item !important;
+  margin-left: 0 !important;
+  padding-left: 0 !important;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}
+
+/* Enhanced Typography and Spacing */
+.rich-editor-content h5,
+.rich-editor-content h6 {
+  font-weight: 600;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  line-height: 1.2;
+}
+
+.rich-editor-content h5 {
+  font-size: 1em;
+}
+
+.rich-editor-content h6 {
+  font-size: 0.9em;
+}
+
+.rich-editor-content p:first-child {
+  margin-top: 0;
+}
+
+.rich-editor-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* Enhanced Lists */
+.rich-editor-content ul,
+.rich-editor-content ol {
+  margin: 1em 0;
+}
+
+.rich-editor-content li {
+  margin-bottom: 0.25em;
+}
+
+/* Blockquotes */
+.rich-editor-content blockquote {
+  border-left: 4px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding-left: 1rem;
+  margin: 1rem 0;
+  font-style: italic;
+  color: #64748b;
+  /* Using your Tailwind primary-500 */
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  border-radius: 0.375rem;
+  padding: 1rem;
+}
+
+/* Code and Pre */
+.rich-editor-content code {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.875em;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+}
+
+.rich-editor-content pre {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+  padding: 1rem;
+  border-radius: 0.5rem;
+  overflow-x: auto;
+  margin: 1rem 0;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+}
+
+.rich-editor-content pre code {
+  background: none;
+  padding: 0;
+  color: inherit;
+}
+
+/* Horizontal Rules */
+.rich-editor-content hr {
+  border: none;
+  border-top: 2px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  margin: 2rem 0;
+  border-radius: 1px;
+}
+
+/* Enhanced Table Styling - The major addition you need */
+.rich-editor-content table {
+  border-collapse: collapse;
+  table-layout: fixed;
+  width: 100%;
+  margin: 1.5rem 0;
+  overflow: hidden;
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 15px -3px rgba(0, 0, 0, 0.07), 0 10px 20px -2px rgba(0, 0, 0, 0.04);
+  /* Using your custom soft shadow */
+}
+
+.rich-editor-content table td,
+.rich-editor-content table th {
+  min-width: 1em;
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  padding: 12px;
+  vertical-align: top;
+  box-sizing: border-box;
+  position: relative;
+  background-color: white;
+}
+
+.rich-editor-content table th {
+  font-weight: 600;
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+  text-align: left;
+  color: #334155;
+  /* Using your Tailwind primary-700 */
+  border-bottom: 2px solid #cbd5e1;
+  /* Using your Tailwind primary-300 */
+}
+
+.rich-editor-content table tr:nth-child(even) td {
+  background-color: #f8fafc;
+  /* Using your Tailwind primary-50 */
+}
+
+.rich-editor-content table tr:hover td {
+  background-color: #f1f5f9;
+  /* Using your Tailwind primary-100 */
+}
+
+.rich-editor-content table .selectedCell {
+  background-color: rgba(59, 130, 246, 0.1) !important;
+  /* Light blue selection */
+}
+
+.rich-editor-content table .column-resize-handle {
+  background-color: #3b82f6;
+  bottom: -2px;
+  position: absolute;
+  right: -2px;
+  top: 0;
+  width: 4px;
+  cursor: col-resize;
+}
+
+.rich-editor-content table p {
+  margin: 0;
+  line-height: 1.4;
+}
+
+/* Enhanced Placeholder */
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #94a3b8;
+  /* Using your Tailwind primary-400 */
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* Highlight/Mark Styling */
+.rich-editor-content mark {
+  background-color: #fef08a;
+  /* Yellow highlight */
+  border-radius: 0.125rem;
+  padding: 0.125rem 0.25rem;
+  margin: 0 0.125rem;
+}
+
+.rich-editor-content mark[data-color] {
+  color: inherit;
+}
+
+/* Text Selection */
+.rich-editor-content ::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: inherit;
+}
+
+/* Superscript and Subscript */
+.rich-editor-content sup {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: super;
+  font-weight: normal;
+}
+
+.rich-editor-content sub {
+  font-size: 0.75em;
+  line-height: 1;
+  vertical-align: sub;
+  font-weight: normal;
+}
+
+/* Focus States */
+.rich-editor-content:focus-within {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror {
+  outline: none;
+}
+
+.rich-editor-content .ProseMirror:focus {
+  outline: none;
+}
+
+/* Text Alignment Classes */
+.rich-editor-content .has-text-align-left {
+  text-align: left;
+}
+
+.rich-editor-content .has-text-align-center {
+  text-align: center;
+}
+
+.rich-editor-content .has-text-align-right {
+  text-align: right;
+}
+
+.rich-editor-content .has-text-align-justify {
+  text-align: justify;
+}
+
+/* Link Styling Enhancement */
+.rich-editor-content a:hover {
+  color: #1d4ed8;
+  text-decoration-thickness: 2px;
+}
+
+/* Enhanced List Styling */
+.rich-editor-content ul {
+  list-style-type: disc;
+}
+
+.rich-editor-content ol {
+  list-style-type: decimal;
+}
+
+.rich-editor-content ul ul {
+  list-style-type: circle;
+  margin-top: 0.5em;
+}
+
+.rich-editor-content ol ol {
+  list-style-type: lower-alpha;
+  margin-top: 0.5em;
+}
+
+/* Toolbar Enhancement - for better integration with your design */
+.rich-editor-content .toolbar-dropdown {
+  border: 1px solid #e2e8f0;
+  /* Using your Tailwind primary-200 */
+  border-radius: 0.375rem;
+  background-color: white;
+  box-shadow: 0 4px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  /* Using your custom medium shadow */
+}
+
+.rich-editor-content .toolbar-dropdown:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+/* Color Input Styling */
+input[type="color"] {
+  -webkit-appearance: none;
+  border: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 0.25rem;
+  overflow: hidden;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 0.25rem;
+}
+
+/* Responsive Table */
+@media (max-width: 640px) {
+  .rich-editor-content table {
+    font-size: 0.875rem;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    padding: 8px;
+  }
+}
+
+/* Print Styles for Tables */
+@media print {
+  .rich-editor-content table {
+    box-shadow: none;
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table td,
+  .rich-editor-content table th {
+    border: 1px solid #000;
+  }
+
+  .rich-editor-content table tr:nth-child(even) td {
+    background-color: #f5f5f5 !important;
+  }
+}

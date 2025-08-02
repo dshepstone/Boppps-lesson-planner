@@ -2556,24 +2556,29 @@ const LectureTemplateSystem = () => {
       'summary': { bg: 'bg-indigo-500' }, 'resources': { bg: 'bg-gray-600' }
     };
 
+    // Replaced with your improved sections generation logic
     const sectionsHtml = sections.map((section, index) => {
       const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
       const blocksHtml = section.blocks.map(getBlockHtml).join('');
-      const isFirstSection = index === 0;
+      const isFirstSection = index === 0; // Only first section starts open
+      const initialState = isFirstSection ? '' : 'closed';
+      const iconRotation = isFirstSection ? 'rotated' : '';
 
       return `
-          <div id="${section.id}" class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
+        <div id="${section.id}" class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
             <div class="section-header ${colorConfig.bg} text-white px-8 py-6 cursor-pointer flex justify-between items-center">
-              <h2 class="text-xl font-semibold">${section.title}</h2>
-              <div class="toggle-icon ${isFirstSection ? 'rotated' : ''}">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-              </div>
+                <h2 class="text-xl font-semibold">${section.title}</h2>
+                <div class="toggle-icon ${iconRotation}">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
             </div>
-            <div class="content-container ${isFirstSection ? '' : 'hidden'}">
-              <div class="p-8">${blocksHtml}</div>
+            <div class="content-container ${initialState}">
+                <div>
+                    <div class="p-8">${blocksHtml}</div>
+                </div>
             </div>
-          </div>
-        `;
+        </div>
+      `;
     }).join('');
 
     const footerHtml = `
@@ -2589,36 +2594,106 @@ const LectureTemplateSystem = () => {
     const accordionJs = `
       <script>
         document.addEventListener('DOMContentLoaded', function() {
-          document.querySelectorAll('.section-header').forEach(header => {
-            header.addEventListener('click', function() {
-              const content = this.nextElementSibling;
-              const icon = this.querySelector('.toggle-icon');
-              if (content) {
-                content.classList.toggle('hidden');
-                icon.classList.toggle('rotated');
-              }
-            });
-          });
-          
-          document.querySelectorAll('nav a').forEach(link => {
-            link.addEventListener('click', function(e) {
-              e.preventDefault();
-              const targetId = this.getAttribute('href').substring(1);
-              const targetSection = document.getElementById(targetId);
-              if (targetSection) {
-                const content = targetSection.querySelector('.content-container');
-                const icon = targetSection.querySelector('.toggle-icon');
-                if (content && content.classList.contains('hidden')) {
-                   content.classList.remove('hidden');
-                   icon.classList.add('rotated');
+            const smoothScrollTo = (elementY, duration = 1000) => {
+                const startingY = window.pageYOffset;
+                const diff = elementY - startingY;
+                let start;
+
+                const step = (timestamp) => {
+                    if (!start) start = timestamp;
+                    const time = timestamp - start;
+                    const percent = Math.min(time / duration, 1);
+                    const easing = percent < 0.5 ? 4 * percent * percent * percent : 1 - Math.pow(-2 * percent + 2, 3) / 2;
+                    window.scrollTo(0, startingY + diff * easing);
+                    if (time < duration) {
+                        window.requestAnimationFrame(step);
+                    }
                 }
-                targetSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              }
+                window.requestAnimationFrame(step);
+            }
+
+            // Improved section header click handling
+            document.querySelectorAll('.section-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('.toggle-icon');
+                    
+                    if (content && icon) {
+                        // Toggle the closed state
+                        const isClosed = content.classList.contains('closed');
+                        
+                        if (isClosed) {
+                            content.classList.remove('closed');
+                            icon.classList.add('rotated');
+                        } else {
+                            content.classList.add('closed');
+                            icon.classList.remove('rotated');
+                        }
+                    }
+                });
             });
-          });
+            
+            // Improved navigation click handling
+            document.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+                    
+                    if (targetSection) {
+                        const content = targetSection.querySelector('.content-container');
+                        const icon = targetSection.querySelector('.toggle-icon');
+                        
+                        // Always open the target section when clicking nav
+                        if (content && content.classList.contains('closed')) {
+                            content.classList.remove('closed');
+                            if (icon) icon.classList.add('rotated');
+                        }
+                        
+                        // Smooth scroll to the section
+                        const elementPosition = targetSection.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - 60; 
+                        smoothScrollTo(offsetPosition, 1000);
+                    }
+                });
+            });
         });
-      </script>
-    `;
+      </script>`;
+
+    const fixedStyles = `
+      <style>
+        .toggle-icon { 
+            transition: transform 0.3s ease-in-out; 
+        }
+        .toggle-icon.rotated { 
+            transform: rotate(90deg); 
+        }
+        body { 
+            background-color: #f9fafb;
+        }
+
+        /* ===== CORRECTED ACCORDION STYLES ===== */
+        .content-container {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
+            opacity: 1;
+            overflow: hidden;
+        }
+        .content-container.closed {
+            grid-template-rows: 0fr;
+            opacity: 0;
+        }
+        .content-container > div {
+            min-height: 0;
+            overflow: hidden;
+        }
+        
+        /* Ensure smooth animation performance */
+        .content-container * {
+            will-change: auto;
+        }
+      </style>`;
 
     const fullHtml = `
       <!DOCTYPE html>
@@ -2628,16 +2703,7 @@ const LectureTemplateSystem = () => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Week ${week} - ${headerData.courseTopic}</title>
         <script src="https://cdn.tailwindcss.com"></script>
-        <style>
-            .content-container { transition: all 0.5s ease-in-out; max-height: 15000px; opacity: 1; overflow: hidden; }
-            .content-container.hidden { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
-            .toggle-icon { transition: transform 0.3s ease-in-out; }
-            .toggle-icon.rotated { transform: rotate(90deg); }
-            body { 
-                background-color: #f9fafb; 
-                scroll-behavior: smooth;
-            }
-        </style>
+        ${fixedStyles}
       </head>
       <body class="bg-gray-50">
         ${headerHtml}
@@ -2885,6 +2951,17 @@ const LectureTemplateSystem = () => {
     });
   };
 
+  const handleToggleAllSections = () => {
+    // If any sections are open, close them all.
+    if (openSectionIds.length > 0) {
+      setOpenSectionIds([]);
+    } else {
+      // If all sections are closed, open them all.
+      const allSectionIds = sections.map(section => section.id);
+      setOpenSectionIds(allSectionIds);
+    }
+  };
+
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
     if (!openSectionIds.includes(sectionId)) {
@@ -2929,7 +3006,7 @@ const LectureTemplateSystem = () => {
       >
         <Settings size={20} />
       </button>
-      
+
       <ControlPanel
         isEditMode={isEditMode}
         onToggleEditMode={handleToggleEditMode}
@@ -2968,6 +3045,26 @@ const LectureTemplateSystem = () => {
               <p className="text-xl text-gray-600">{displayDate}</p>
             </div>
             <div className="text-right">
+              {/* ===== ADD THIS BUTTON ===== */}
+              {isEditMode && (
+                <button
+                  onClick={handleToggleAllSections}
+                  className="mb-2 flex items-center gap-2 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-600 transition-colors hover:bg-gray-200 ml-auto"
+                >
+                  {openSectionIds.length > 0 ? (
+                    <>
+                      <ChevronUp size={16} />
+                      Collapse All
+                    </>
+                  ) : (
+                    <>
+                      <ChevronDown size={16} />
+                      Expand All
+                    </>
+                  )}
+                </button>
+              )}
+              {/* ===== END OF ADDITION ===== */}
               <p
                 className={`text-lg font-medium text-gray-800 ${isEditMode ? 'outline-blue-200 outline-dashed outline-2 rounded-md px-2' : ''}`}
                 contentEditable={isEditMode}
@@ -3139,6 +3236,21 @@ const LectureTemplateSystem = () => {
         .accordion-content-wrapper > div {
           overflow: hidden;
         }
+        /* ===== ADD THESE STYLES ===== */
+        .accordion-content-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
+          opacity: 0;
+        }
+        .accordion-content-wrapper.is-open {
+          grid-template-rows: 1fr;
+          opacity: 1;
+        }
+        .accordion-content-wrapper > div {
+          overflow: hidden;
+        }
+        /* ===== END OF ADDITION ===== */
       `}</style>
     </div>
   );

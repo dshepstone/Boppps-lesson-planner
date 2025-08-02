@@ -1207,6 +1207,7 @@ const ControlPanel = ({
   instructorName,
   instructorEmail,
   onHeaderDataChange,
+  headerData,
 }) => (
   <div className={`fixed top-6 right-6 z-50 transition-all duration-300 no-print ${isOpen ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`}>
     <div className="bg-white rounded-2xl shadow-xl border border-gray-200 min-w-80 max-w-96">
@@ -1257,6 +1258,15 @@ const ControlPanel = ({
               type="email"
               value={instructorEmail}
               onChange={e => onHeaderDataChange('instructorEmail', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent mb-4"
+            />
+
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Course Title</label>
+            <input
+              type="text"
+              value={headerData.courseTopic}
+              onChange={e => onHeaderDataChange('courseTopic', e.target.value)}
+              placeholder="Enter course title"
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
             />
           </div>
@@ -2183,6 +2193,27 @@ const LectureTemplateSystem = () => {
   // NEW: Use the logo context
   const { getLogoHtml, hasLogo } = useLogo();
 
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [tempTitle, setTempTitle] = useState('');
+
+  const handleTitleSave = () => {
+    const newTitle = tempTitle.trim();
+    if (newTitle) {
+      handleHeaderDataChange('courseTopic', newTitle);
+    }
+    setIsEditingTitle(false);
+  };
+
+  const handleTitleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleTitleSave();
+    } else if (e.key === 'Escape') {
+      setTempTitle(headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`));
+      setIsEditingTitle(false);
+    }
+  };
+
   // Header data
   const [headerData, setHeaderData] = useState({
     courseTopic: 'Course Topic - Week 1',
@@ -2377,6 +2408,13 @@ const LectureTemplateSystem = () => {
       setShowAutoSaveRecovery(true);
     }
   }, [loadAutoSavedData]);
+
+  // Update tempTitle when editing starts
+  useEffect(() => {
+    if (isEditingTitle) {
+      setTempTitle(headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`));
+    }
+  }, [isEditingTitle, headerData.courseTopic, week]);
 
   useEffect(() => {
     const observer = new IntersectionObserver(
@@ -3159,6 +3197,7 @@ const LectureTemplateSystem = () => {
         instructorName={headerData.instructorName}
         instructorEmail={headerData.instructorEmail}
         onHeaderDataChange={handleHeaderDataChange}
+        headerData={headerData}
       />
 
       <header className="bg-white border-b border-gray-200 shadow-sm print-break-inside-avoid">
@@ -3176,16 +3215,29 @@ const LectureTemplateSystem = () => {
               )}
             </div>
 
-            {/* ← MIDDLE COLUMN: Title */}
-            <div className="flex-1 text-center md:text-left">
-              <h1
-                className="text-4xl font-bold text-gray-900"
-                contentEditable
-                suppressContentEditableWarning
-                onBlur={e => handleHeaderDataChange('courseTopic', e.currentTarget.textContent)}
-              >
-                {headerData.courseTopic}
-              </h1>
+            {/* ← MIDDLE COLUMN: Editable Title */}
+            <div className={`text-center md:text-left transition-all duration-200 ${isEditingTitle ? 'flex-[2]' : 'flex-1'}`}>
+              {!isEditingTitle ? (
+                <h1
+                  className="text-4xl font-bold text-gray-900 cursor-pointer hover:bg-gray-50 rounded px-2 py-1 transition-colors duration-200"
+                  onClick={() => setIsEditingTitle(true)}
+                >
+                  {headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`)}
+                </h1>
+              ) : (
+                <input
+                  type="text"
+                  className="text-4xl font-bold text-gray-900 bg-transparent border-2 border-blue-500 rounded px-2 py-1 w-full min-w-full focus:outline-none"
+                  value={tempTitle}
+                  onChange={(e) => setTempTitle(e.target.value)}
+                  onBlur={handleTitleSave}
+                  onKeyDown={handleTitleKeyDown}
+                  autoFocus
+                  onFocus={(e) => e.target.select()}
+                  style={{ minWidth: '100%' }}
+                />
+              )}
+              <p className="text-xs text-gray-500 italic mt-1">Click the title to edit</p>
             </div>
 
             {/* ← RIGHT COLUMN: Instructor Info */}

@@ -395,8 +395,8 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
             type="button"
             onClick={handleHtmlModeToggle}
             className={`px-3 py-1 text-xs rounded-md transition-all ${isHtmlMode
-                ? 'bg-slate-700 text-white'
-                : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
+              ? 'bg-slate-700 text-white'
+              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
           >
             &lt;/&gt; HTML
@@ -626,7 +626,7 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
               className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
               title="Horizontal Line"
             >
-              ―
+              —
             </button>
           </div>
 
@@ -1105,41 +1105,45 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
         </div>
       </div>
 
-      <div className={`transition-all duration-500 ease-in-out ${isOpen ? 'max-h-[15000px] opacity-100' : 'max-h-0 opacity-0'} overflow-hidden`}>
-        <div className="p-8">
-          {section.blocks.map((block, index) => (
-            <ContentBlock
-              key={block.id}
-              block={block}
-              isEditMode={isEditMode}
-              onEdit={() => handleBlockEdit(block.id)}
-              onDelete={() => handleBlockDelete(block.id)}
-              onBlockUpdate={handleBlockUpdate}
-              onDragStart={(e) => handleBlockDragStart(e, block.id)}
-              onDrop={(e) => handleBlockDrop(e, index)}
-              onDragOver={(e) => e.preventDefault()}
-              onMoveUp={() => handleBlockMove(block.id, 'up')}
-              onMoveDown={() => handleBlockMove(block.id, 'down')}
-              isFirst={index === 0}
-              isLast={index === section.blocks.length - 1}
-            />
-          ))}
+      <div className={`accordion-content-wrapper ${isOpen ? 'is-open' : ''}`}>
+        {/* This inner div is essential for the grid animation to work correctly */}
+        <div>
+          <div className="p-8">
+            {section.blocks.map((block, index) => (
+              <ContentBlock
+                key={block.id}
+                block={block}
+                isEditMode={isEditMode}
+                onEdit={() => handleBlockEdit(block.id)}
+                onDelete={() => handleBlockDelete(block.id)}
+                onBlockUpdate={handleBlockUpdate}
+                onDragStart={(e) => handleBlockDragStart(e, block.id)}
+                onDrop={(e) => handleBlockDrop(e, index)}
+                onDragOver={(e) => e.preventDefault()}
+                onMoveUp={() => handleBlockMove(block.id, 'up')}
+                onMoveDown={() => handleBlockMove(block.id, 'down')}
+                isFirst={index === 0}
+                isLast={index === section.blocks.length - 1}
+              />
+            ))}
 
-          {isEditMode && (
-            <div className="mt-6 flex justify-center no-print">
-              <button
-                onClick={() => onAddContent(section.id)}
-                className="w-10 h-10 bg-slate-600 text-white rounded-xl flex items-center justify-center hover:bg-slate-700 shadow-md transition-colors"
-              >
-                <Plus size={18} />
-              </button>
-            </div>
-          )}
+            {isEditMode && (
+              <div className="mt-6 flex justify-center no-print">
+                <button
+                  onClick={() => onAddContent(section.id)}
+                  className="w-10 h-10 bg-slate-600 text-white rounded-xl flex items-center justify-center hover:bg-slate-700 shadow-md transition-colors"
+                >
+                  <Plus size={18} />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
   );
 };
+
 
 // Control Panel Component
 const ControlPanel = ({
@@ -1552,9 +1556,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
             const trimmedLine = line.trim();
 
             // Check if line starts with bullet point
-            if (trimmedLine.startsWith('• ')) {
-              return `<li>${trimmedLine.substring(2)}</li>`;
-            } else if (trimmedLine.startsWith('- ')) {
+            if (trimmedLine.startsWith('• ') || trimmedLine.startsWith('- ')) {
               return `<li>${trimmedLine.substring(2)}</li>`;
             } else if (/^\d+\./.test(trimmedLine)) {
               // Numbered list item
@@ -1810,7 +1812,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                       <textarea
                         value={formData.imageFilenames || ''}
                         onChange={(e) => setFormData({ ...formData, imageFilenames: e.target.value })}
-                        placeholder="diagram.jpg&#10;chart.png&#10;photo.gif"
+                        placeholder={`diagram.jpg\nchart.png\nphoto.gif`}
                         rows={4}
                         className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent font-mono text-sm"
                       />
@@ -2089,7 +2091,7 @@ const LectureTemplateSystem = () => {
   const [autoSaveData, setAutoSaveData] = useState(null);
   const [defaultSection, setDefaultSection] = useState('overview');
   const [activeSectionId, setActiveSectionId] = useState('');
-  const [openSectionId, setOpenSectionId] = useState('overview');
+  const [openSectionIds, setOpenSectionIds] = useState(['overview']); // Can hold multiple IDs
 
   // Header data
   const [headerData, setHeaderData] = useState({
@@ -2100,6 +2102,28 @@ const LectureTemplateSystem = () => {
     footerInstitution: 'Institution Name',
     footerCopyright: '© 2025 All Rights Reserved'
   });
+
+  const smoothScrollTo = (elementY, duration = 1000) => {
+    const startingY = window.pageYOffset;
+    const diff = elementY - startingY;
+    let start;
+
+    const step = (timestamp) => {
+      if (!start) start = timestamp;
+      const time = timestamp - start;
+      const percent = Math.min(time / duration, 1);
+
+      // easeInOutCubic timing function for a soft start and end
+      const easing = percent < 0.5 ? 4 * percent * percent * percent : 1 - Math.pow(-2 * percent + 2, 3) / 2;
+
+      window.scrollTo(0, startingY + diff * easing);
+
+      if (time < duration) {
+        window.requestAnimationFrame(step);
+      }
+    }
+    window.requestAnimationFrame(step);
+  }
 
   // Initial sections data
   const [sections, setSections] = useState([
@@ -2609,11 +2633,13 @@ const LectureTemplateSystem = () => {
             .content-container.hidden { max-height: 0; opacity: 0; padding-top: 0; padding-bottom: 0; margin-top: 0; margin-bottom: 0; }
             .toggle-icon { transition: transform 0.3s ease-in-out; }
             .toggle-icon.rotated { transform: rotate(90deg); }
-            body { background-color: #f9fafb; }
+            body { 
+                background-color: #f9fafb; 
+                scroll-behavior: smooth;
+            }
         </style>
       </head>
       <body class="bg-gray-50">
-        <!-- LOCKED STUDENT VERSION — Editing disabled -->
         ${headerHtml}
         ${navHtml}
         <div class="max-w-7xl mx-auto px-16 py-12">
@@ -2849,15 +2875,31 @@ const LectureTemplateSystem = () => {
     setHeaderData(prev => ({ ...prev, [field]: value }));
   };
 
+  const handleToggleSection = (sectionId) => {
+    setOpenSectionIds(prevOpenIds => {
+      if (prevOpenIds.includes(sectionId)) {
+        return prevOpenIds.filter(id => id !== sectionId);
+      } else {
+        return [...prevOpenIds, sectionId];
+      }
+    });
+  };
+
   const handleNavClick = (e, sectionId) => {
     e.preventDefault();
-    setOpenSectionId(sectionId);
+    if (!openSectionIds.includes(sectionId)) {
+      setOpenSectionIds(prev => [...prev, sectionId]);
+    }
+    // Use a timeout to allow the accordion to start opening before scrolling
     setTimeout(() => {
       const element = document.getElementById(sectionId);
       if (element) {
-        element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
+        // Offset to account for the sticky nav bar (adjust 60 if your nav is taller/shorter)
+        const offsetPosition = elementPosition - 60;
+        smoothScrollTo(offsetPosition, 1000); // Using the new function
       }
-    }, 300);
+    }, 100);
   };
 
   const displayDate = new Date(date + 'T00:00:00').toLocaleDateString('en-US', {
@@ -2887,7 +2929,7 @@ const LectureTemplateSystem = () => {
       >
         <Settings size={20} />
       </button>
-
+      
       <ControlPanel
         isEditMode={isEditMode}
         onToggleEditMode={handleToggleEditMode}
@@ -2977,8 +3019,8 @@ const LectureTemplateSystem = () => {
             onAddContent={(sectionId) => handleAddContent(sectionId)}
             onDeleteSection={handleDeleteSection}
             onBlockEdit={handleBlockEdit}
-            isOpen={openSectionId === section.id}
-            onToggle={() => setOpenSectionId(openSectionId === section.id ? null : section.id)}
+            isOpen={openSectionIds.includes(section.id)}
+            onToggle={() => handleToggleSection(section.id)}
           />
         ))}
       </div>
@@ -3003,7 +3045,7 @@ const LectureTemplateSystem = () => {
 
       {/* Back to Top Button */}
       <button
-        onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+        onClick={() => smoothScrollTo(0, 1000)}
         className="fixed bottom-8 right-8 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print opacity-0 invisible hover:opacity-100 hover:visible"
         style={{
           opacity: typeof window !== 'undefined' && window.pageYOffset > 300 ? 1 : 0,
@@ -3013,7 +3055,7 @@ const LectureTemplateSystem = () => {
         ↑
       </button>
 
-      {/* Print Styles */}
+      {/* Print and Animation Styles */}
       <style jsx>{`
         @media print {
           .no-print, .no-print * {
@@ -3082,6 +3124,20 @@ const LectureTemplateSystem = () => {
           .group, img {
              break-inside: avoid;
           }
+        }
+
+        .accordion-content-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
+          opacity: 0;
+        }
+        .accordion-content-wrapper.is-open {
+          grid-template-rows: 1fr;
+          opacity: 1;
+        }
+        .accordion-content-wrapper > div {
+          overflow: hidden;
         }
       `}</style>
     </div>

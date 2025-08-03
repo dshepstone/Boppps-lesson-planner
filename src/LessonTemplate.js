@@ -25,7 +25,7 @@ import { Table } from '@tiptap/extension-table';
 import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
-
+import CodeBlock from '@tiptap/extension-code-block';
 // Utility functions
 const generateId = () => 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
@@ -287,6 +287,8 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
       TableRow,
       TableHeader,
       TableCell,
+      // Add CodeBlock
+      CodeBlock,
       // Placeholder
       Placeholder.configure({
         placeholder: 'Start typing your content...',
@@ -584,6 +586,15 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
                 title="Quote"
               >
                 "
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
+                className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('codeBlock') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Code Block"
+              >
+                &lt;/&gt;
               </button>
             </div>
 
@@ -996,8 +1007,6 @@ const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop
         ? 'border-2 border-dashed border-gray-300 p-4 m-2 rounded-xl hover:border-slate-400 hover:bg-slate-50/50'
         : ''
         }`}
-      draggable={isEditMode}
-      onDragStart={onDragStart}
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
@@ -1017,7 +1026,12 @@ const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop
           >
             <X size={14} />
           </button>
-          <div className="w-8 h-8 bg-gray-400 text-white rounded-lg flex items-center justify-center shadow-md cursor-grab hover:bg-gray-500 active:cursor-grabbing transition-colors" title="Drag to reorder">
+          <div
+            className="w-8 h-8 bg-gray-400 text-white rounded-lg flex items-center justify-center shadow-md cursor-grab hover:bg-gray-500 active:cursor-grabbing transition-colors"
+            title="Drag to reorder"
+            draggable={isEditMode}
+            onDragStart={onDragStart}
+          >
             <GripVertical size={14} />
           </div>
           {!isFirst && (

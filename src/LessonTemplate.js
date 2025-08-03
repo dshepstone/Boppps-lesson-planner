@@ -1,6 +1,7 @@
 /*
-  Enhanced App.js with Full Tiptap Editor Integration
-  This file includes ALL original functionality plus enhanced Tiptap editor features
+  Enhanced App.js with Full Tiptap Editor Integration and Initial Data Loading
+  This file includes ALL original functionality plus the ability to be instantiated with data via props,
+  effectively combining the features of App.js and lesson_template.js.
 */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp } from 'lucide-react';
@@ -418,291 +419,291 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
               : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
               }`}
           >
-          HTML
-      </button>
+            HTML
+          </button>
         )}
-    </div>
-
-      {/* Enhanced Toolbar - Hidden in preview mode and HTML mode */ }
-  {
-    !isHtmlMode && !isPreviewMode && (
-      <div className="flex flex-wrap items-center gap-1 p-3 bg-white border-b border-gray-200">
-        {/* Font Family */}
-        <div className="flex items-center gap-1 mr-2">
-          <select
-            onChange={(e) => setFontFamily(e.target.value)}
-            className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
-            defaultValue=""
-          >
-            <option value="">Font Family</option>
-            <option value="Arial">Arial</option>
-            <option value="Helvetica">Helvetica</option>
-            <option value="Times New Roman">Times New Roman</option>
-            <option value="Courier New">Courier New</option>
-            <option value="Georgia">Georgia</option>
-            <option value="Verdana">Verdana</option>
-          </select>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Text Formatting */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBold().run()}
-            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bold') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Bold (Ctrl+B)"
-          >
-            <strong>B</strong>
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleItalic().run()}
-            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('italic') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Italic (Ctrl+I)"
-          >
-            <em>I</em>
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleUnderline().run()}
-            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('underline') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Underline (Ctrl+U)"
-          >
-            <u>U</u>
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleStrike().run()}
-            className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('strike') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Strikethrough"
-          >
-            <s>S</s>
-          </button>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Text Color */}
-        <div className="flex items-center gap-1">
-          <input
-            type="color"
-            onChange={(e) => setTextColor(e.target.value)}
-            className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
-            title="Text Color"
-          />
-          <input
-            type="color"
-            onChange={(e) => setHighlightColor(e.target.value)}
-            className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
-            title="Highlight Color"
-          />
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Superscript/Subscript */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleSuperscript().run()}
-            className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('superscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Superscript"
-          >
-            X²
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleSubscript().run()}
-            className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('subscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Subscript"
-          >
-            X₁
-          </button>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Headings */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().setParagraph().run()}
-            className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('paragraph') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-          >
-            P
-          </button>
-          {[1, 2, 3, 4].map((level) => (
-            <button
-              key={level}
-              type="button"
-              onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
-              className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('heading', { level }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                }`}
-            >
-              H{level}
-            </button>
-          ))}
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Lists */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bulletList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-            title="Bullet List"
-          >
-            ●
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleOrderedList().run()}
-            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('orderedList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-            title="Numbered List"
-          >
-            1.
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().toggleBlockquote().run()}
-            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('blockquote') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-            title="Quote"
-          >
-            "
-          </button>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Text Alignment */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().setTextAlign('left').run()}
-            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-            title="Align Left"
-          >
-            ⇤
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().setTextAlign('center').run()}
-            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-            title="Align Center"
-          >
-            ≡
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().setTextAlign('right').run()}
-            className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-              }`}
-            title="Align Right"
-          >
-            ⇥
-          </button>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Table and More */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={addTable}
-            className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-            title="Insert Table"
-          >
-            📊 Table
-          </button>
-          <button
-            type="button"
-            onClick={setLink}
-            className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('link') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-              }`}
-            title="Insert Link"
-          >
-            🔗 Link
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().setHorizontalRule().run()}
-            className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-            title="Horizontal Line"
-          >
-            —
-          </button>
-        </div>
-
-        <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-        {/* Clear and Undo/Redo */}
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
-            className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-            title="Clear Formatting"
-          >
-            ✕ Clear
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().undo().run()}
-            disabled={!editor.can().undo()}
-            className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Undo"
-          >
-            ↶
-          </button>
-          <button
-            type="button"
-            onClick={() => editor.chain().focus().redo().run()}
-            disabled={!editor.can().redo()}
-            className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            title="Redo"
-          >
-            ↷
-          </button>
-        </div>
       </div>
-    )
-  }
 
-  {/* Editor Area */ }
-  {
-    isHtmlMode ? (
-      <textarea
-        value={htmlContent}
-        onChange={(e) => handleHtmlChange(e.target.value)}
-        className="flex-1 p-4 border-none resize-none focus:outline-none font-mono text-sm min-h-20 max-h-96"
-        placeholder="Enter HTML content..."
-      />
-    ) : (
-      <div className="flex-1 min-h-20 max-h-96 overflow-y-auto">
-        <EditorContent
-          editor={editor}
-          className="prose prose-sm max-w-none p-4 focus:outline-none rich-editor-content min-h-16"
-        />
-      </div>
-    )
-  }
+      {/* Enhanced Toolbar - Hidden in preview mode and HTML mode */}
+      {
+        !isHtmlMode && !isPreviewMode && (
+          <div className="flex flex-wrap items-center gap-1 p-3 bg-white border-b border-gray-200">
+            {/* Font Family */}
+            <div className="flex items-center gap-1 mr-2">
+              <select
+                onChange={(e) => setFontFamily(e.target.value)}
+                className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
+                defaultValue=""
+              >
+                <option value="">Font Family</option>
+                <option value="Arial">Arial</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Courier New">Courier New</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Verdana">Verdana</option>
+              </select>
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Text Formatting */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bold') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Bold (Ctrl+B)"
+              >
+                <strong>B</strong>
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('italic') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Italic (Ctrl+I)"
+              >
+                <em>I</em>
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('underline') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Underline (Ctrl+U)"
+              >
+                <u>U</u>
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleStrike().run()}
+                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('strike') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Strikethrough"
+              >
+                <s>S</s>
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Text Color */}
+            <div className="flex items-center gap-1">
+              <input
+                type="color"
+                onChange={(e) => setTextColor(e.target.value)}
+                className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
+                title="Text Color"
+              />
+              <input
+                type="color"
+                onChange={(e) => setHighlightColor(e.target.value)}
+                className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
+                title="Highlight Color"
+              />
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Superscript/Subscript */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleSuperscript().run()}
+                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('superscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Superscript"
+              >
+                X²
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleSubscript().run()}
+                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('subscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Subscript"
+              >
+                X₁
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Headings */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().setParagraph().run()}
+                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('paragraph') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+              >
+                P
+              </button>
+              {[1, 2, 3, 4].map((level) => (
+                <button
+                  key={level}
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
+                  className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('heading', { level }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                >
+                  H{level}
+                </button>
+              ))}
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Lists */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bulletList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+                title="Bullet List"
+              >
+                ●
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('orderedList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+                title="Numbered List"
+              >
+                1.
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().toggleBlockquote().run()}
+                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('blockquote') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+                title="Quote"
+              >
+                "
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Text Alignment */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().setTextAlign('left').run()}
+                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+                title="Align Left"
+              >
+                ⇤
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().setTextAlign('center').run()}
+                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+                title="Align Center"
+              >
+                ≡
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().setTextAlign('right').run()}
+                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                  }`}
+                title="Align Right"
+              >
+                ⇥
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Table and More */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={addTable}
+                className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                title="Insert Table"
+              >
+                📊 Table
+              </button>
+              <button
+                type="button"
+                onClick={setLink}
+                className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('link') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
+                  }`}
+                title="Insert Link"
+              >
+                🔗 Link
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().setHorizontalRule().run()}
+                className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                title="Horizontal Line"
+              >
+                —
+              </button>
+            </div>
+
+            <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+            {/* Clear and Undo/Redo */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
+                className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
+                title="Clear Formatting"
+              >
+                ✕ Clear
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().undo().run()}
+                disabled={!editor.can().undo()}
+                className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Undo"
+              >
+                ↶
+              </button>
+              <button
+                type="button"
+                onClick={() => editor.chain().focus().redo().run()}
+                disabled={!editor.can().redo()}
+                className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Redo"
+              >
+                ↷
+              </button>
+            </div>
+          </div>
+        )
+      }
+
+      {/* Editor Area */}
+      {
+        isHtmlMode ? (
+          <textarea
+            value={htmlContent}
+            onChange={(e) => handleHtmlChange(e.target.value)}
+            className="flex-1 p-4 border-none resize-none focus:outline-none font-mono text-sm min-h-20 max-h-96"
+            placeholder="Enter HTML content..."
+          />
+        ) : (
+          <div className="flex-1 min-h-20 max-h-96 overflow-y-auto">
+            <EditorContent
+              editor={editor}
+              className="prose prose-sm max-w-none p-4 focus:outline-none rich-editor-content min-h-16"
+            />
+          </div>
+        )
+      }
     </div >
   );
 };
@@ -1996,8 +1997,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                       multiple
                       onChange={(e) => setFormData({ ...formData, imageFiles: e.target.files })}
                       className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent transition-colors ${!formData.imageFiles || formData.imageFiles.length === 0
-                          ? 'border-red-300 bg-red-50'
-                          : 'border-gray-300'
+                        ? 'border-red-300 bg-red-50'
+                        : 'border-gray-300'
                         }`}
                     />
                     {(!formData.imageFiles || formData.imageFiles.length === 0) && (
@@ -2037,8 +2038,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                         placeholder={`diagram.jpg\nchart.png\nphoto.gif`}
                         rows={4}
                         className={`w-full p-3 border rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent font-mono text-sm transition-colors ${!formData.imageFilenames || !formData.imageFilenames.trim()
-                            ? 'border-red-300 bg-red-50'
-                            : 'border-gray-300'
+                          ? 'border-red-300 bg-red-50'
+                          : 'border-gray-300'
                           }`}
                       />
                       {(!formData.imageFilenames || !formData.imageFilenames.trim()) && (
@@ -2309,11 +2310,11 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
       </div>
     </div>
   );
-  };
+};
 
 
 // Main Application Component
-const LectureTemplateSystem = () => {
+const LectureTemplateSystem = ({ initialData }) => {
   const [isEditMode, setIsEditMode] = useState(false);
   const [week, setWeek] = useState('1');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
@@ -2386,150 +2387,155 @@ const LectureTemplateSystem = () => {
     window.requestAnimationFrame(step);
   }
 
-  // Initial sections data
-  const [sections, setSections] = useState([
-    {
-      id: 'overview',
-      title: 'Session Overview',
-      type: 'content',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'text',
-          content: 'Welcome to this week\'s lesson. This session covers the main learning objectives and key concepts that students will explore and master.'
-        },
-        {
-          id: generateId(),
-          type: 'info-box',
-          content: '<h3>This Week\'s Focus</h3><p>By the end of this session, students will understand:</p><ul><li>Key concept 1: Fundamental principles</li><li>Key concept 2: Practical applications</li><li>Key concept 3: Real-world connections</li><li>Key concept 4: Assessment criteria</li></ul><p><strong>Goal:</strong> Students will demonstrate understanding through practical application and reflection.</p>'
-        }
-      ]
-    },
-    {
-      id: 'bridge-in',
-      title: 'Bridge-In',
-      type: 'boppps',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'heading',
-          content: '<h3>Connecting to Previous Learning</h3>'
-        },
-        {
-          id: generateId(),
-          type: 'text',
-          content: 'This bridge-in activity connects today\'s lesson with what students already know. Use this space to create connections, ask engaging questions, or provide a thought-provoking scenario.'
-        },
-        {
-          id: generateId(),
-          type: 'exercise-box',
-          content: '<h4>Opening Activity</h4><p>Consider this question/scenario/problem...</p><ul><li>Discussion point 1</li><li>Discussion point 2</li><li>Discussion point 3</li></ul>'
-        }
-      ]
-    },
-    {
-      id: 'outcomes',
-      title: 'Learning Outcomes',
-      type: 'boppps',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'text',
-          content: 'By the end of today\'s session, you will be able to:'
-        },
-        {
-          id: generateId(),
-          type: 'list',
-          content: '<ul><li>Learning outcome 1: Demonstrate understanding of...</li><li>Learning outcome 2: Apply knowledge to...</li><li>Learning outcome 3: Analyze and evaluate...</li><li>Learning outcome 4: Create and synthesize...</li></ul>'
-        }
-      ]
-    },
-    {
-      id: 'pre-assessment',
-      title: 'Pre-Assessment',
-      type: 'boppps',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'heading',
-          content: '<h3>What Do You Already Know?</h3>'
-        },
-        {
-          id: generateId(),
-          type: 'text',
-          content: 'Before we dive into new content, let\'s assess your current understanding:'
-        }
-      ]
-    },
-    {
-      id: 'participatory-learning',
-      title: 'Participatory Learning',
-      type: 'boppps',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'heading',
-          content: '<h3>Main Learning Activities</h3>'
-        },
-        {
-          id: generateId(),
-          type: 'text',
-          content: 'This is the core content delivery section. Include your main concepts, demonstrations, activities, and student interactions.'
-        }
-      ]
-    },
-    {
-      id: 'post-assessment',
-      title: 'Post-Assessment',
-      type: 'boppps',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'heading',
-          content: '<h3>Check Your Understanding</h3>'
-        },
-        {
-          id: generateId(),
-          type: 'text',
-          content: 'Let\'s verify that you\'ve achieved today\'s learning outcomes:'
-        }
-      ]
-    },
-    {
-      id: 'summary',
-      title: 'Summary & Next Steps',
-      type: 'boppps',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'heading',
-          content: '<h3>Key Takeaways</h3>'
-        },
-        {
-          id: generateId(),
-          type: 'list',
-          content: '<ul><li>Main concept 1: Summary of key learning</li><li>Main concept 2: Important connections made</li><li>Main concept 3: Skills developed</li><li>Main concept 4: Applications to remember</li></ul>'
-        }
-      ]
-    },
-    {
-      id: 'resources',
-      title: 'Resources & Materials',
-      type: 'content',
-      blocks: [
-        {
-          id: generateId(),
-          type: 'heading',
-          content: '<h3>Required Readings</h3>'
-        },
-        {
-          id: generateId(),
-          type: 'list',
-          content: '<ul><li>Textbook Chapter X: [Chapter title and pages]</li><li>Article: [Author, Title, Source]</li><li>Online Resource: [Description and URL]</li></ul>'
-        }
-      ]
+  // Initial sections data - UPDATED to handle initialData prop
+  const [sections, setSections] = useState(() => {
+    if (initialData && initialData.sections) {
+      return initialData.sections;
     }
-  ]);
+    return [
+      {
+        id: 'overview',
+        title: 'Session Overview',
+        type: 'content',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'text',
+            content: 'Welcome to this week\'s lesson. This session covers the main learning objectives and key concepts that students will explore and master.'
+          },
+          {
+            id: generateId(),
+            type: 'info-box',
+            content: '<h3>This Week\'s Focus</h3><p>By the end of this session, students will understand:</p><ul><li>Key concept 1: Fundamental principles</li><li>Key concept 2: Practical applications</li><li>Key concept 3: Real-world connections</li><li>Key concept 4: Assessment criteria</li></ul><p><strong>Goal:</strong> Students will demonstrate understanding through practical application and reflection.</p>'
+          }
+        ]
+      },
+      {
+        id: 'bridge-in',
+        title: 'Bridge-In',
+        type: 'boppps',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'heading',
+            content: '<h3>Connecting to Previous Learning</h3>'
+          },
+          {
+            id: generateId(),
+            type: 'text',
+            content: 'This bridge-in activity connects today\'s lesson with what students already know. Use this space to create connections, ask engaging questions, or provide a thought-provoking scenario.'
+          },
+          {
+            id: generateId(),
+            type: 'exercise-box',
+            content: '<h4>Opening Activity</h4><p>Consider this question/scenario/problem...</p><ul><li>Discussion point 1</li><li>Discussion point 2</li><li>Discussion point 3</li></ul>'
+          }
+        ]
+      },
+      {
+        id: 'outcomes',
+        title: 'Learning Outcomes',
+        type: 'boppps',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'text',
+            content: 'By the end of today\'s session, you will be able to:'
+          },
+          {
+            id: generateId(),
+            type: 'list',
+            content: '<ul><li>Learning outcome 1: Demonstrate understanding of...</li><li>Learning outcome 2: Apply knowledge to...</li><li>Learning outcome 3: Analyze and evaluate...</li><li>Learning outcome 4: Create and synthesize...</li></ul>'
+          }
+        ]
+      },
+      {
+        id: 'pre-assessment',
+        title: 'Pre-Assessment',
+        type: 'boppps',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'heading',
+            content: '<h3>What Do You Already Know?</h3>'
+          },
+          {
+            id: generateId(),
+            type: 'text',
+            content: 'Before we dive into new content, let\'s assess your current understanding:'
+          }
+        ]
+      },
+      {
+        id: 'participatory-learning',
+        title: 'Participatory Learning',
+        type: 'boppps',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'heading',
+            content: '<h3>Main Learning Activities</h3>'
+          },
+          {
+            id: generateId(),
+            type: 'text',
+            content: 'This is the core content delivery section. Include your main concepts, demonstrations, activities, and student interactions.'
+          }
+        ]
+      },
+      {
+        id: 'post-assessment',
+        title: 'Post-Assessment',
+        type: 'boppps',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'heading',
+            content: '<h3>Check Your Understanding</h3>'
+          },
+          {
+            id: generateId(),
+            type: 'text',
+            content: 'Let\'s verify that you\'ve achieved today\'s learning outcomes:'
+          }
+        ]
+      },
+      {
+        id: 'summary',
+        title: 'Summary & Next Steps',
+        type: 'boppps',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'heading',
+            content: '<h3>Key Takeaways</h3>'
+          },
+          {
+            id: generateId(),
+            type: 'list',
+            content: '<ul><li>Main concept 1: Summary of key learning</li><li>Main concept 2: Important connections made</li><li>Main concept 3: Skills developed</li><li>Main concept 4: Applications to remember</li></ul>'
+          }
+        ]
+      },
+      {
+        id: 'resources',
+        title: 'Resources & Materials',
+        type: 'content',
+        blocks: [
+          {
+            id: generateId(),
+            type: 'heading',
+            content: '<h3>Required Readings</h3>'
+          },
+          {
+            id: generateId(),
+            type: 'list',
+            content: '<ul><li>Textbook Chapter X: [Chapter title and pages]</li><li>Article: [Author, Title, Source]</li><li>Online Resource: [Description and URL]</li></ul>'
+          }
+        ]
+      }
+    ];
+  });
 
   // Auto-save functionality
   const autoSaveKey = `lecture-template-autosave-${week}-${date}`;
@@ -2540,14 +2546,32 @@ const LectureTemplateSystem = () => {
     sections
   }, autoSaveKey);
 
-  // Check for auto-saved data on mount
+  // ADDED: Load initial data if provided
+  useEffect(() => {
+    if (initialData) {
+      if (initialData.headerData) {
+        setHeaderData(initialData.headerData);
+      }
+      if (initialData.week) {
+        setWeek(initialData.week);
+      }
+      if (initialData.date) {
+        setDate(initialData.date);
+      }
+      if (initialData.sections) {
+        setSections(initialData.sections);
+      }
+    }
+  }, [initialData]);
+
+  // Check for auto-saved data on mount - UPDATED to not run if initialData is present
   useEffect(() => {
     const savedData = loadAutoSavedData();
-    if (savedData && savedData.timestamp) {
+    if (savedData && savedData.timestamp && !initialData) {
       setAutoSaveData(savedData);
       setShowAutoSaveRecovery(true);
     }
-  }, [loadAutoSavedData]);
+  }, [loadAutoSavedData, initialData]);
 
   // Update tempTitle when editing starts
   useEffect(() => {
@@ -2686,7 +2710,6 @@ const LectureTemplateSystem = () => {
     const headerHtml = `
       <header class="header-section">
         <div class="header-content">
-          <!-- Top Row: Date and Instructor Info -->
           <div class="header-top">
             <div class="date-section">
               <p class="date-text">${displayDate}</p>
@@ -2702,7 +2725,6 @@ const LectureTemplateSystem = () => {
             </div>
           </div>
           
-          <!-- Title Row -->
           <div class="title-section">
             <h1 class="main-title">${headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`)}</h1>
           </div>
@@ -3191,20 +3213,17 @@ const LectureTemplateSystem = () => {
     <div class="max-w-7xl mx-auto px-6 py-12">
       <div class="flex items-start justify-between space-x-6">
 
-        <!-- ← LEFT COLUMN: Date over Logo -->
         <div class="flex flex-col items-center md:items-start space-y-3">
           <p class="text-lg text-gray-600">${displayDate}</p>
           ${logoHtml ? `<div class="logo">${logoHtml}</div>` : ''}
         </div>
 
-        <!-- ← MIDDLE COLUMN: Title -->
         <div class="flex-1 text-center md:text-left">
           <h1 class="text-4xl font-bold text-gray-900">
             ${headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`)}
           </h1>
         </div>
 
-        <!-- ← RIGHT COLUMN: Instructor Info -->
         <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 items-center flex-shrink-0">
           <span class="font-medium text-gray-800 text-right">Instructor:</span>
           <span class="text-gray-600">${headerData.instructorName}</span>
@@ -3868,8 +3887,8 @@ const LectureTemplateSystem = () => {
       <footer className="bg-gray-900 text-white py-8 mt-16 print-break-before">
         <div className="max-w-7xl mx-auto px-6 text-center">
           <p className="mb-2 font-medium">{headerData.footerCourseInfo}</p>
-          <p className="mb-2 text-gray-300">{headerData.footerInstitution}</p>
-          <p className="text-gray-400 text-sm">{headerData.footerCopyright}</p>
+          <p className="mb-2 text-gray-300">${headerData.footerInstitution}</p>
+          <p className="text-gray-400 text-sm">${headerData.footerCopyright}</p>
         </div>
       </footer>
 
@@ -3994,10 +4013,10 @@ const LectureTemplateSystem = () => {
   );
 };
 
-const App = () => {
+const App = ({ initialData }) => {
   return (
     <LogoProvider>
-      <LectureTemplateSystem />
+      <LectureTemplateSystem initialData={initialData} />
     </LogoProvider>
   );
 };

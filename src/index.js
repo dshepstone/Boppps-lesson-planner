@@ -1,11 +1,11 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import LectureTemplateSystem from './App';
+import MainApp from './MainApp'; // ← Change this line
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <LectureTemplateSystem />
+    <MainApp />
   </React.StrictMode>
 );

@@ -1962,10 +1962,97 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               />
             )}
 
-            {/* Video content - keeping existing video logic */}
+            {/* Video content */}
             {contentType === 'video' && (
-              <div className="space-y-4">
-                {/* Video form content remains the same */}
+              <div className="space-y-6">
+                {/* Platform Selector */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Video Platform</label>
+                  <select
+                    value={formData.videoPlatform || 'youtube'}
+                    onChange={(e) => handleFieldChange('videoPlatform', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  >
+                    <option value="youtube">YouTube</option>
+                    <option value="vimeo">Vimeo</option>
+                    <option value="panopto">Panopto</option>
+                    <option value="embed">Custom Embed Code</option>
+                  </select>
+                </div>
+
+                {/* Conditional Input: URL or Embed Code */}
+                {formData.videoPlatform === 'embed' ? (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Embed Code</label>
+                    <textarea
+                      value={formData.embedCode || ''}
+                      onChange={(e) => handleFieldChange('embedCode', e.target.value)}
+                      rows={5}
+                      placeholder='Paste your full embed code here (e.g., <iframe... ></iframe>)'
+                      className="w-full p-3 border border-gray-300 rounded-lg font-mono text-sm focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                    />
+                  </div>
+                ) : (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Video URL</label>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={formData.videoUrl || ''}
+                        onChange={(e) => handleFieldChange('videoUrl', e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="flex-grow p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                      />
+                      <button
+                        onClick={() => fetchVideoInfo(formData.videoUrl, formData.videoPlatform)}
+                        disabled={isLoadingVideoInfo || !formData.videoUrl}
+                        className="px-4 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 disabled:bg-gray-300 transition-colors font-medium flex items-center justify-center"
+                      >
+                        {isLoadingVideoInfo ? <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div> : "Fetch Info"}
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Metadata and Citation Fields (Not for 'embed') */}
+                {formData.videoPlatform !== 'embed' && (
+                  <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
+                    <h4 className="font-semibold text-gray-800">APA Citation Details (Optional)</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Video Title</label>
+                        <input type="text" value={formData.videoTitle || ''} onChange={(e) => handleFieldChange('videoTitle', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Author/Channel</label>
+                        <input type="text" value={formData.videoAuthor || ''} onChange={(e) => handleFieldChange('videoAuthor', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Source (Platform Name)</label>
+                        <input type="text" value={formData.videoSource || ''} onChange={(e) => handleFieldChange('videoSource', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Publication Date</label>
+                        <input type="date" value={formData.videoDate || ''} onChange={(e) => handleFieldChange('videoDate', e.target.value)} className="w-full p-2 border border-gray-300 rounded-md" />
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Aspect Ratio */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Aspect Ratio</label>
+                  <select
+                    value={formData.aspectRatio || '16-9'}
+                    onChange={(e) => handleFieldChange('aspectRatio', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+                  >
+                    <option value="16-9">16:9 (Widescreen)</option>
+                    <option value="4-3">4:3 (Standard)</option>
+                    <option value="1-1">1:1 (Square)</option>
+                    <option value="21-9">21:9 (Cinematic)</option>
+                  </select>
+                </div>
               </div>
             )}
 

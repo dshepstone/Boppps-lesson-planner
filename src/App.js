@@ -1287,6 +1287,37 @@ const ControlPanel = ({
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
             />
           </div>
+          {/* FOOTER SETTINGS SECTION - Add this block to your ControlPanel component */}
+          <div className="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-200">
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">🦶 Footer Information</h4>
+
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Course Title & Code</label>
+            <input
+              type="text"
+              value={headerData.footerCourseInfo}
+              onChange={e => onHeaderDataChange('footerCourseInfo', e.target.value)}
+              placeholder="e.g., Animation Foundations - DSGN1140"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent mb-4"
+            />
+
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Institution Name</label>
+            <input
+              type="text"
+              value={headerData.footerInstitution}
+              onChange={e => onHeaderDataChange('footerInstitution', e.target.value)}
+              placeholder="e.g., Conestoga College"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent mb-4"
+            />
+
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Copyright Notice</label>
+            <input
+              type="text"
+              value={headerData.footerCopyright}
+              onChange={e => onHeaderDataChange('footerCopyright', e.target.value)}
+              placeholder="e.g., © 2025 All Rights Reserved"
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
+            />
+          </div>
 
 
           <label className="block text-sm font-semibold text-gray-700 mb-2">Date:</label>

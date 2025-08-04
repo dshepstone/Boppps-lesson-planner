@@ -10,7 +10,6 @@ import SchoolLogoSettings from './SchoolLogoSettings';
 // Enhanced Tiptap imports - including all new extensions
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -239,7 +238,7 @@ const studentFriendlyTitles = {
 };
 
 // Section Component
-const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode }) => {
+const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow }) => {
   const [draggedBlock, setDraggedBlock] = useState(null);
 
   const handleBlockDragStart = (e, blockId) => {
@@ -373,6 +372,8 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
                 isLast={index === section.blocks.length - 1}
                 htmlModes={htmlModes}
                 toggleHtmlMode={toggleHtmlMode}
+                onAddBlockBelow={onAddBlockBelow}
+                sectionId={section.id}
               />
             ))}
 
@@ -949,7 +950,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               columns: formData.galleryColumns || '2',
               items: items,
               sectionId: formData.sectionId,  // Preserve sectionId for handleModalSave
-              isEditing: formData.isEditing   // Preserve isEditing flag
+              isEditing: formData.isEditing,  // Preserve isEditing flag
+              insertAfterBlockId: formData.insertAfterBlockId
             };
 
             console.log('Gallery block being saved:', galleryBlock); // Debug log
@@ -994,7 +996,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               imageSource: formData.image_source || '',
               imageDate: formData.image_date || '',
               sectionId: formData.sectionId,  // Preserve sectionId
-              isEditing: formData.isEditing   // Preserve isEditing flag
+              isEditing: formData.isEditing,   // Preserve isEditing flag
+              insertAfterBlockId: formData.insertAfterBlockId
             };
 
             console.log('Image block being saved:', imageBlock); // Debug log
@@ -1025,7 +1028,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           processedData.src = embedHtml.match(/src="([^"]*)"/)?.[1];
         }
 
-        onSave({ ...processedData, type: 'video' });
+        onSave({ ...processedData, type: 'video', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
 
       case 'audio':
@@ -1046,7 +1049,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
         processedData.audioSourceInfo = formData.audioSourceInfo;
         processedData.audioDateInfo = formData.audioDateInfo;
 
-        onSave({ ...processedData, type: 'audio' });
+        onSave({ ...processedData, type: 'audio', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
 
       case 'cards':
@@ -1098,11 +1101,11 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
         processedData.layout = formData.cardLayout || '2x1';
         processedData.style = formData.cardStyle || 'info';
-        onSave({ ...processedData, type: 'cards' });
+        onSave({ ...processedData, type: 'cards', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
 
       default:
-        onSave({ ...processedData, type: contentType });
+        onSave({ ...processedData, type: contentType, sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
     }
 
@@ -1962,6 +1965,36 @@ const LectureTemplateSystem = ({ initialData }) => {
     } else {
       setModalContentType(contentType);
       setModalInitialData({ sectionId });
+      setIsModalOpen(true);
+    }
+  };
+
+  // Add a new block directly below the specified block within a section
+  const handleAddBlockBelow = (blockId, contentType = 'text', sectionId) => {
+    if (contentType === 'text') {
+      const newBlock = {
+        id: generateId(),
+        type: 'text',
+        content: 'Click to edit this text content.'
+      };
+
+      setSections(prevSections =>
+        prevSections.map(section => {
+          if (section.id !== sectionId) return section;
+          const blocks = [...section.blocks];
+          const index = blocks.findIndex(b => b.id === blockId);
+          if (index === -1) {
+            blocks.push(newBlock);
+          } else {
+            blocks.splice(index + 1, 0, newBlock);
+          }
+          return { ...section, blocks };
+        })
+      );
+      showSaveIndicator('➕ Text content added');
+    } else {
+      setModalContentType(contentType);
+      setModalInitialData({ sectionId, insertAfterBlockId: blockId });
       setIsModalOpen(true);
     }
   };
@@ -2837,7 +2870,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   // This should replace the existing handleModalSave function in the main component
 
   const handleModalSave = (blockData) => {
-    const { sectionId, isEditing, ...content } = blockData;
+    const { sectionId, isEditing, insertAfterBlockId, ...content } = blockData;
 
     console.log('handleModalSave received:', blockData); // Debug log
 
@@ -2888,11 +2921,21 @@ const LectureTemplateSystem = ({ initialData }) => {
 
       const targetSectionId = sectionId || defaultSection || 'overview';
       setSections(prevSections =>
-        prevSections.map(section =>
-          section.id === targetSectionId
-            ? { ...section, blocks: [...section.blocks, newBlock] }
-            : section
-        )
+        prevSections.map(section => {
+          if (section.id !== targetSectionId) return section;
+          const blocks = [...section.blocks];
+          if (insertAfterBlockId) {
+            const index = blocks.findIndex(b => b.id === insertAfterBlockId);
+            if (index !== -1) {
+              blocks.splice(index + 1, 0, newBlock);
+            } else {
+              blocks.push(newBlock);
+            }
+          } else {
+            blocks.push(newBlock);
+          }
+          return { ...section, blocks };
+        })
       );
       showSaveIndicator(`💾 ${content.type || modalContentType} content added`);
     }
@@ -3212,6 +3255,7 @@ const LectureTemplateSystem = ({ initialData }) => {
             onToggle={() => handleToggleSection(section.id)}
             htmlModes={htmlModes}
             toggleHtmlMode={toggleHtmlMode}
+            onAddBlockBelow={handleAddBlockBelow}
           />
         ))}
       </div>

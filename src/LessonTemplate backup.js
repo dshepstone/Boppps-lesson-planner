@@ -26,52 +26,43 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
 import CodeBlock from '@tiptap/extension-code-block';
+// Utility functions
+const generateId = () => 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
-// Phase 1 Utility Imports - Content Utils
-import {
-  generateId,
-  extractVideoId,
-  generateImageCitation,
-  generateVideoCitation,
-  generateAudioCitation,
-  htmlToText,
-  formatTime,
-  formatFileSize,
-  validateContent
-} from './Utils/contentUtils';
+const extractVideoId = (url, platform) => {
+  if (!url) return null;
+  switch (platform) {
+    case 'youtube':
+      const youtubeRegExp = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+      const youtubeMatch = url.match(youtubeRegExp);
+      return youtubeMatch ? youtubeMatch[1] : null;
+    case 'vimeo':
+      const vimeoRegExp = /(?:vimeo)\.com.*(?:videos|video|channels|)\/([\d]+)/i;
+      const vimeoMatch = url.match(vimeoRegExp);
+      return vimeoMatch ? vimeoMatch[1] : null;
+    case 'panopto':
+      if (url.includes('panopto.com')) {
+        try {
+          const urlObj = new URL(url);
 
-// Phase 1 Utility Imports - Constants
-import {
-  CONTENT_TYPES,
-  BOPPPS_SECTIONS,
-  VIDEO_PLATFORMS,
-  CARD_LAYOUTS,
-  CARD_STYLES,
-  BOX_CONFIGS,
-  IMAGE_SIZES,
-  GALLERY_COLUMNS,
-  AUTO_SAVE_CONFIG
-} from './Utils/constants';
+          // Extract session ID from URL parameters
+          const urlParams = new URLSearchParams(urlObj.search);
+          const sessionId = urlParams.get('id');
 
-// Phase 1 Utility Imports - Export Utils
-import {
-  blockToHtml,
-  getVideoEmbedHtml,
-  generateCompleteHtml
-} from './Utils/exportUtils';
-
-// Phase 1 Utility Imports - Validation Utils
-import {
-  validateImageFile,
-  validateAudioFile,
-  validateVideoUrl,
-  validateEmail,
-  validateFormData
-} from './Utils/validationUtils';
-
-// Test in console
-console.log('✅ generateId:', generateId());
-console.log('✅ CARD_STYLES:', CARD_STYLES);
+          if (sessionId) {
+            // Convert to embed URL format
+            const baseUrl = `${urlObj.protocol}//${urlObj.hostname}`;
+            return `${baseUrl}/Panopto/Pages/Embed.aspx?id=${sessionId}&autoplay=false&offerviewer=true&showtitle=true&showbrand=false&captions=true&interactivity=all`;
+          }
+        } catch (error) {
+          console.error('Error parsing Panopto URL:', error);
+        }
+      }
+      return null;
+    default:
+      return null;
+  }
+};
 
 const generateVideoEmbed = (platform, videoId, embedCode, aspectRatio) => {
   const aspectClass = {
@@ -108,6 +99,36 @@ const generateAPACitation = (title, author, date, source, url) => {
   if (source) citation += `${source}. `;
   if (url) citation += `<a href="${url}" target="_blank" class="text-blue-600 hover:text-blue-800">${url}</a>`;
   return citation || '';
+};
+
+const generateImageCitation = (title, author, source, date) => {
+  if (!title && !author && !source && !date) return '';
+  let citation = '';
+  if (author) citation += `<strong>${author}.</strong> `;
+  if (date) {
+    const imageDate = new Date(date + 'T00:00:00');
+    citation += `(${imageDate.getFullYear()}). `;
+  } else if (author) {
+    citation += `(n.d.). `;
+  }
+  if (title) citation += `<em>${title}</em> [Image]. `;
+  if (source) citation += `${source}.`;
+  return citation.trim();
+};
+
+const generateAudioCitation = (title, creator, source, date) => {
+  if (!title && !creator && !source && !date) return '';
+  let citation = '';
+  if (creator) citation += `<strong>${creator}.</strong> `;
+  if (date) {
+    const audioDate = new Date(date + 'T00:00:00');
+    citation += `(${audioDate.getFullYear()}). `;
+  } else if (creator) {
+    citation += `(n.d.). `;
+  }
+  if (title) citation += `<em>${title}</em> [Audio]. `;
+  if (source) citation += `${source}.`;
+  return citation.trim();
 };
 
 // Auto-save functionality
@@ -631,7 +652,13 @@ const AudioPlayer = ({ src, description, citation }) => {
     }
   };
 
-   return (
+  const formatTime = (time) => {
+    const minutes = Math.floor(time / 60);
+    const seconds = Math.floor(time % 60);
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+  };
+
+  return (
     <div className="my-6 p-6 bg-gray-50 rounded-xl border border-gray-200">
       {description && (
         <div className="text-gray-600 italic mb-4 text-sm" dangerouslySetInnerHTML={{ __html: description }} />

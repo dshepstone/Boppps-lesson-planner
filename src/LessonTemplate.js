@@ -989,7 +989,7 @@ const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop
               {block.items.map((item, index) => (
                 <div key={index} className={`p-6 rounded-xl border-l-4 ${cardStyleConfig.bg} ${cardStyleConfig.border} shadow-sm hover:shadow-md transition-shadow`}>
                   <h4 className={`font-semibold mb-3 ${cardStyleConfig.accent}`}>{item.title}</h4>
-                  <div className="text-gray-700" dangerouslySetInnerHTML={{ __html: item.content }} />
+                  <div className="text-gray-700 card-content" dangerouslySetInnerHTML={{ __html: item.content }} />
                 </div>
               ))}
             </div>
@@ -2332,20 +2332,27 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                               }}
                               className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                             />
-                            <textarea
-                              placeholder={`Card Content\n\nYou can use:\n• Bullet points\n• Multiple lines\n• Simple formatting`}
-                              value={card?.content || ''}
-                              onChange={(e) => {
-                                const newItems = [...cards];
-                                newItems[index] = {
-                                  ...newItems[index],
-                                  content: e.target.value
-                                };
-                                setFormData({ ...formData, cardItems: newItems });
-                              }}
-                              rows={4}
-                              className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-slate-500 focus:border-transparent"
-                            />
+
+                            {/* UPDATED: Replace textarea with RichTextEditor */}
+                            <div className="border border-gray-200 rounded-lg overflow-hidden">
+                              <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
+                                <span className="text-sm font-medium text-gray-700">Card Content</span>
+                              </div>
+                              <RichTextEditor
+                                content={card?.content || ''}
+                                onChange={(content) => {
+                                  const newItems = [...cards];
+                                  newItems[index] = {
+                                    ...newItems[index],
+                                    content: content
+                                  };
+                                  setFormData({ ...formData, cardItems: newItems });
+                                }}
+                                isHtmlMode={false}
+                                onToggleHtmlMode={() => { }} // Not needed for cards
+                                isPreviewMode={false}
+                              />
+                            </div>
                           </div>
                         </div>
                       ));
@@ -2380,8 +2387,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <h4 className="font-medium text-blue-800 mb-2">💡 Tips for Cards:</h4>
                   <ul className="text-sm text-blue-700 space-y-1">
-                    <li>• Use bullet points (•) or dashes (-) for lists</li>
-                    <li>• Press Enter twice for new paragraphs</li>
+                    <li>• Use the rich text editor for formatting (bold, italic, lists, etc.)</li>
+                    <li>• Add links, headings, and styled text</li>
                     <li>• Keep titles short and descriptive</li>
                     <li>• Cards work great for key points, steps, or highlights</li>
                   </ul>
@@ -3285,20 +3292,36 @@ const LectureTemplateSystem = ({ initialData }) => {
             </div>
         `;
       case 'cards':
-        const layoutClass = { '2x1': 'grid-cols-1 md:grid-cols-2', '2x2': 'grid-cols-1 md:grid-cols-2', '3x1': 'grid-cols-1 md:grid-cols-3', '1x3': 'grid-cols-1' }[block.layout] || 'grid-cols-1 md:grid-cols-2';
+        const layoutClass = {
+          '2x1': 'grid-cols-1 md:grid-cols-2',
+          '2x2': 'grid-cols-1 md:grid-cols-2',
+          '3x1': 'grid-cols-1 md:grid-cols-3',
+          '1x3': 'grid-cols-1'
+        }[block.layout] || 'grid-cols-1 md:grid-cols-2';
+
         const cardStyleConfig = {
           info: { bg: 'bg-slate-50', border: 'border-l-slate-400', accent: 'text-slate-700' },
           exercise: { bg: 'bg-emerald-50', border: 'border-l-emerald-400', accent: 'text-emerald-700' },
           warning: { bg: 'bg-amber-50', border: 'border-l-amber-400', accent: 'text-amber-700' },
           success: { bg: 'bg-green-50', border: 'border-l-green-400', accent: 'text-green-700' }
         }[block.style] || { bg: 'bg-slate-50', border: 'border-l-slate-400', accent: 'text-slate-700' };
+
+        // Generate HTML for each card - content now supports rich text/HTML formatting
         const cardItemsHtml = block.items.map(item => `
-            <div class="p-6 rounded-xl border-l-4 ${cardStyleConfig.bg} ${cardStyleConfig.border} shadow-sm">
-                <h4 class="font-semibold mb-3 ${cardStyleConfig.accent}">${item.title}</h4>
-                <div class="text-gray-700">${item.content}</div>
-            </div>
-        `).join('');
-        return `<div class="my-6"><div class="grid ${layoutClass} gap-4">${cardItemsHtml}</div></div>`;
+    <div class="p-6 rounded-xl border-l-4 ${cardStyleConfig.bg} ${cardStyleConfig.border} shadow-sm hover:shadow-md transition-shadow">
+      <h4 class="font-semibold mb-3 ${cardStyleConfig.accent}">${item.title}</h4>
+      <div class="text-gray-700 prose prose-sm max-w-none">${item.content}</div>
+    </div>
+  `).join('');
+
+        return `
+    <div class="my-6">
+      <div class="grid ${layoutClass} gap-4">
+        ${cardItemsHtml}
+      </div>
+    </div>
+  `;
+
       default:
         return `<div>Unsupported content type: ${block.type}</div>`;
     }
@@ -3720,11 +3743,10 @@ const LectureTemplateSystem = ({ initialData }) => {
 
     // Special handling for different content types
     if (blockToEdit.type === 'cards') {
-      // Map existing cards items to the format expected by the modal
-      // Convert HTML content to plain text for easier editing
+      // UPDATED: Preserve HTML content instead of converting to plain text
       const cleanedItems = (blockToEdit.items || []).map(item => ({
         title: item.title || '',
-        content: htmlToText(item.content || '')
+        content: item.content || '' // Keep HTML formatting intact
       }));
 
       initialDataForModal.cardItems = cleanedItems;
@@ -4109,6 +4131,64 @@ const LectureTemplateSystem = ({ initialData }) => {
     min-height: 0;
     overflow: hidden;
   }
+  /* Card content formatting - ensures rich text displays properly */
+.card-content {
+  line-height: 1.6;
+}
+
+.card-content p {
+  margin-bottom: 0.75rem;
+}
+
+.card-content p:last-child {
+  margin-bottom: 0;
+}
+
+.card-content ul, .card-content ol {
+  margin: 0.75rem 0;
+  padding-left: 1.5rem;
+}
+
+.card-content ul {
+  list-style-type: disc;
+}
+
+.card-content ol {
+  list-style-type: decimal;
+}
+
+.card-content li {
+  margin-bottom: 0.25rem;
+  line-height: 1.5;
+}
+
+.card-content strong {
+  font-weight: 600;
+}
+
+.card-content em {
+  font-style: italic;
+}
+
+.card-content h1, .card-content h2, .card-content h3, .card-content h4 {
+  font-weight: 600;
+  margin: 0.75rem 0 0.5rem 0;
+  line-height: 1.3;
+}
+
+.card-content h1 { font-size: 1.25rem; }
+.card-content h2 { font-size: 1.125rem; }
+.card-content h3 { font-size: 1rem; }
+.card-content h4 { font-size: 0.875rem; }
+
+.card-content a {
+  color: #3b82f6;
+  text-decoration: underline;
+}
+
+.card-content a:hover {
+  color: #1d4ed8;
+}
       `}</style>
     </div>
   );

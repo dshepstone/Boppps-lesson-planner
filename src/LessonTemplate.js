@@ -3973,19 +3973,50 @@ const LectureTemplateSystem = ({ initialData }) => {
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 no-print">
         <div className="max-w-7xl mx-auto px-6">
-          <ul className="flex justify-center gap-1 py-2 flex-wrap">
-            {sections.map(section => (
-              <li key={section.id}>
-                <a
-                  href={`#${section.id}`}
-                  onClick={(e) => handleNavClick(e, section.id)}
-                  className={`px-4 py-2 rounded-t-lg transition-all font-medium text-sm ${activeSectionId === section.id ? 'border-b-2 border-blue-500 text-blue-500' : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'}`}
-                >
-                  {section.title}
-                </a>
-              </li>
-            ))}
-          </ul>
+          <div className="flex items-center justify-between py-2">
+            {/* Left side - Collapse/Expand All Button */}
+            <button
+              onClick={handleToggleAllSections}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+              title={openSectionIds.length > 0 ? "Collapse All Sections" : "Expand All Sections"}
+            >
+              {openSectionIds.length > 0 ? (
+                <React.Fragment>
+                  <ChevronUp size={16} />
+                  Collapse All
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <ChevronDown size={16} />
+                  Expand All
+                </React.Fragment>
+              )}
+            </button>
+
+            {/* Center - Navigation Links */}
+            <ul className="flex justify-center gap-1 flex-wrap">
+              {sections.map(section => (
+                <li key={section.id}>
+                  {/* FIX: Added the opening <a> tag here */}
+                  <a
+                    href={`#${section.id}`}
+                    onClick={(e) => handleNavClick(e, section.id)}
+                    className={`px-4 py-2 rounded-t-lg transition-all font-medium text-sm ${activeSectionId === section.id
+                        ? 'border-b-2 border-blue-500 text-blue-500'
+                        : 'text-gray-700 hover:text-gray-900 hover:bg-gray-100'
+                      }`}
+                  >
+                    {section.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+
+            {/* Right side - Section Count */}
+            <div className="text-sm text-gray-500">
+              {openSectionIds.length}/{sections.length} open
+            </div>
+          </div>
         </div>
       </nav>
 

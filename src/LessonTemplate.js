@@ -245,158 +245,177 @@ const AutoSaveRecoveryModal = ({ isOpen, onRecover, onDiscard, timestamp }) => {
 // Enhanced Tiptap Rich Text Editor Component
 const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPreviewMode = false }) => {
   const [htmlContent, setHtmlContent] = useState(content || '');
+  const [htmlError, setHtmlError] = useState('');
+  const textareaRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        heading: {
-          levels: [1, 2, 3, 4, 5, 6],
-        },
-        // Disable some extensions that we'll configure separately
+        heading: { levels: [1, 2, 3, 4, 5, 6] },
         table: false,
       }),
-      // Essential styling extensions
       TextStyle,
       Underline,
-      Color.configure({
-        types: ['textStyle'],
-      }),
-      FontFamily.configure({
-        types: ['textStyle'],
-      }),
-      Highlight.configure({
-        multicolor: true,
-      }),
+      Color.configure({ types: ['textStyle'] }),
+      FontFamily.configure({ types: ['textStyle'] }),
+      Highlight.configure({ multicolor: true }),
       Subscript,
       Superscript,
-      // Text alignment
-      TextAlign.configure({
-        types: ['heading', 'paragraph'],
-      }),
-      // Links
+      TextAlign.configure({ types: ['heading', 'paragraph'] }),
       Link.configure({
         openOnClick: false,
-        HTMLAttributes: {
-          class: 'text-blue-600 underline hover:text-blue-800',
-        },
+        HTMLAttributes: { class: 'text-blue-600 underline hover:text-blue-800' },
       }),
-      // Tables
-      Table.configure({
-        resizable: true,
-      }),
+      Table.configure({ resizable: true }),
       TableRow,
       TableHeader,
       TableCell,
-      // Add CodeBlock
       CodeBlock,
-      // Placeholder
-      Placeholder.configure({
-        placeholder: 'Start typing your content...',
-      }),
+      Placeholder.configure({ placeholder: 'Start typing your content...' }),
     ],
     content: content || '',
-    editable: !isPreviewMode,
+    editable: !isPreviewMode && !isHtmlMode,
     onUpdate: ({ editor }) => {
-      const html = editor.getHTML();
-      setHtmlContent(html); // Update local state immediately
-      if (onChange) {
-        onChange(html);
+      if (!isHtmlMode) {
+        const html = editor.getHTML();
+        setHtmlContent(html);
+        onChange && onChange(html);
       }
     },
     onBlur: ({ editor }) => {
-      // Ensure content is saved when editor loses focus
-      const html = editor.getHTML();
-      setHtmlContent(html);
-      if (onChange) {
-        onChange(html);
+      if (!isHtmlMode) {
+        const html = editor.getHTML();
+        setHtmlContent(html);
+        onChange && onChange(html);
       }
-    },
-    onFocus: ({ editor }) => {
-      // Ensure we have the latest content when editor gains focus
-      const html = editor.getHTML();
-      setHtmlContent(html);
     },
   });
 
-  // Update editor content when content prop changes
   useEffect(() => {
-    if (editor && content !== undefined && content !== editor.getHTML()) {
+    if (editor && content !== undefined && !isHtmlMode && content !== editor.getHTML()) {
       editor.commands.setContent(content || '', false);
       setHtmlContent(content || '');
     }
-  }, [content, editor]);
+  }, [content, editor, isHtmlMode]);
 
-  // Update HTML content when switching modes and ensure content is synced
   useEffect(() => {
-    if (editor) {
-      const currentHtml = editor.getHTML();
-      setHtmlContent(currentHtml);
-      // Ensure the parent component gets the latest content when switching modes
-      if (onChange && currentHtml !== content) {
-        onChange(currentHtml);
-      }
+    if (editor && htmlContent !== editor.getHTML()) {
+      setHtmlContent(editor.getHTML());
     }
-  }, [isHtmlMode, editor]);
-
-  // Ensure content is saved when component unmounts or editor changes
-  useEffect(() => {
-    return () => {
-      if (editor && onChange) {
-        const finalHtml = editor.getHTML();
-        if (finalHtml !== content) {
-          onChange(finalHtml);
-        }
-      }
-    };
-  }, [editor, onChange, content]);
-
-  // Handle HTML mode changes
-  const handleHtmlChange = (value) => {
-    setHtmlContent(value);
-    if (onChange) {
-      onChange(value);
-    }
-  };
+  }, [editor]);
 
   const handleHtmlModeToggle = () => {
     if (isHtmlMode && editor) {
-      // Switching from HTML to visual mode
-      editor.commands.setContent(htmlContent, false);
+      try {
+        setHtmlError('');
+        editor.commands.setContent(htmlContent, false);
+        onChange && onChange(htmlContent);
+      } catch (error) {
+        setHtmlError('Invalid HTML: ' + error.message);
+        return;
+      }
+    } else if (editor) {
+      const currentHtml = editor.getHTML();
+      setHtmlContent(currentHtml);
     }
     onToggleHtmlMode && onToggleHtmlMode();
   };
 
-  // Helper functions for toolbar actions
+  const handleHtmlChange = (e) => {
+    const value = e.target.value;
+    setHtmlContent(value);
+    setHtmlError('');
+
+    try {
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = value;
+      onChange && onChange(value);
+    } catch (error) {
+      // Invalid HTML - don't call onChange yet
+    }
+  };
+
+  const formatHtml = () => {
+    try {
+      const formatted = htmlContent
+        .replace(/></g, '>\n<')
+        .replace(/^\s+|\s+$/gm, '')
+        .split('\n')
+        .filter(line => line.trim().length > 0)
+        .map((line, index, lines) => {
+          const trimmedLine = line.trim();
+          let openTags = 0;
+          for (let i = 0; i < index; i++) {
+            const prevLine = lines[i].trim();
+            if (prevLine.match(/<[^\/][^>]*[^\/]>$/)) openTags++;
+            if (prevLine.match(/<\/[^>]*>$/)) openTags--;
+          }
+          if (trimmedLine.match(/^<\/[^>]*>$/)) openTags--;
+          const indent = openTags > 0 ? '  '.repeat(openTags) : '';
+          return indent + trimmedLine;
+        })
+        .join('\n');
+
+      setHtmlContent(formatted);
+      onChange && onChange(formatted);
+    } catch (error) {
+      setHtmlError('Could not format HTML: ' + error.message);
+    }
+  };
+
+  const insertHtmlTemplate = (template) => {
+    const templates = {
+      paragraph: '<p>Your text here</p>',
+      heading: '<h2>Your heading here</h2>',
+      list: '<ul>\n  <li>Item 1</li>\n  <li>Item 2</li>\n  <li>Item 3</li>\n</ul>',
+      link: '<a href="https://example.com">Link text</a>',
+      image: '<img src="image-url.jpg" alt="Description" />',
+      table: '<table>\n  <tr>\n    <th>Header 1</th>\n    <th>Header 2</th>\n  </tr>\n  <tr>\n    <td>Cell 1</td>\n    <td>Cell 2</td>\n  </tr>\n</table>',
+      div: '<div class="custom-class">\n  Your content here\n</div>'
+    };
+
+    const templateHtml = templates[template] || '';
+    const textarea = textareaRef.current;
+    if (textarea) {
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const newContent = htmlContent.substring(0, start) + templateHtml + htmlContent.substring(end);
+      setHtmlContent(newContent);
+      onChange && onChange(newContent);
+
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(start + templateHtml.length, start + templateHtml.length);
+      }, 0);
+    }
+  };
+
+  const autoResizeTextarea = () => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  };
+
+  useEffect(() => {
+    if (isHtmlMode && textareaRef.current) {
+      autoResizeTextarea();
+    }
+  }, [isHtmlMode, htmlContent]);
+
   const setLink = () => {
     const previousUrl = editor.getAttributes('link').href;
     const url = window.prompt('Enter URL:', previousUrl || 'https://');
-
-    if (url === null) {
-      return;
-    }
-
+    if (url === null) return;
     if (url === '') {
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
-
     editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
   };
 
   const addTable = () => {
     editor.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run();
-  };
-
-  const setTextColor = (color) => {
-    editor.chain().focus().setColor(color).run();
-  };
-
-  const setHighlightColor = (color) => {
-    editor.chain().focus().toggleHighlight({ color }).run();
-  };
-
-  const setFontFamily = (fontFamily) => {
-    editor.chain().focus().setFontFamily(fontFamily).run();
   };
 
   if (!editor) {
@@ -411,311 +430,181 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
     <div className="flex flex-col border border-gray-200 rounded-lg overflow-hidden">
       {/* Header */}
       <div className="flex justify-between items-center px-4 py-2 bg-gray-50 border-b border-gray-200">
-        <div className="text-sm font-medium text-gray-700">Content Editor</div>
-        {onToggleHtmlMode && (
-          <button
-            type="button"
-            onClick={handleHtmlModeToggle}
-            className={`px-3 py-1 text-xs rounded-md transition-all ${isHtmlMode
-              ? 'bg-slate-700 text-white'
-              : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
-              }`}
-          >
-            HTML
-          </button>
-        )}
+        <div className="flex items-center gap-2">
+          <div className="text-sm font-medium text-gray-700">Content Editor</div>
+          {isHtmlMode && (
+            <span className="text-xs px-2 py-1 bg-orange-100 text-orange-700 rounded">HTML Mode</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {isHtmlMode && (
+            <button
+              type="button"
+              onClick={formatHtml}
+              className="px-2 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors"
+              title="Format HTML"
+            >
+              Format
+            </button>
+          )}
+          {onToggleHtmlMode && (
+            <button
+              type="button"
+              onClick={handleHtmlModeToggle}
+              className={`px-3 py-1 text-xs rounded-md transition-all ${isHtmlMode
+                ? 'bg-orange-100 text-orange-700 border border-orange-300'
+                : 'bg-gray-100 text-gray-700 border border-gray-300'
+                } hover:bg-opacity-80`}
+            >
+              {isHtmlMode ? '📝 Rich Text' : '💻 HTML'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Enhanced Toolbar - Hidden in preview mode and HTML mode */}
-      {
-        !isHtmlMode && !isPreviewMode && (
-          <div className="flex flex-wrap items-center gap-1 p-3 bg-white border-b border-gray-200">
-            {/* Font Family */}
-            <div className="flex items-center gap-1 mr-2">
-              <select
-                onChange={(e) => setFontFamily(e.target.value)}
-                className="text-xs border border-gray-200 rounded px-2 py-1 bg-white"
-                defaultValue=""
-              >
-                <option value="">Font Family</option>
-                <option value="Arial">Arial</option>
-                <option value="Helvetica">Helvetica</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Courier New">Courier New</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Verdana">Verdana</option>
-              </select>
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Text Formatting */}
-            <div className="flex items-center gap-1">
+      {/* Content Area */}
+      {isHtmlMode ? (
+        <div className="flex flex-col">
+          {/* HTML Toolbar */}
+          <div className="flex flex-wrap items-center gap-2 px-4 py-2 bg-gray-50 border-b border-gray-200">
+            <span className="text-xs text-gray-600 font-medium">Quick Insert:</span>
+            {['paragraph', 'heading', 'list', 'link', 'table', 'div'].map(template => (
               <button
+                key={template}
                 type="button"
-                onClick={() => editor.chain().focus().toggleBold().run()}
-                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bold') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Bold (Ctrl+B)"
+                onClick={() => insertHtmlTemplate(template)}
+                className="px-2 py-1 text-xs bg-white border border-gray-300 rounded hover:bg-gray-50 capitalize"
               >
-                <strong>B</strong>
+                {template}
               </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleItalic().run()}
-                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('italic') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Italic (Ctrl+I)"
-              >
-                <em>I</em>
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleUnderline().run()}
-                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('underline') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Underline (Ctrl+U)"
-              >
-                <u>U</u>
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleStrike().run()}
-                className={`p-2 text-sm border rounded hover:bg-gray-50 transition-colors ${editor.isActive('strike') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Strikethrough"
-              >
-                <s>S</s>
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Text Color */}
-            <div className="flex items-center gap-1">
-              <input
-                type="color"
-                onChange={(e) => setTextColor(e.target.value)}
-                className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
-                title="Text Color"
-              />
-              <input
-                type="color"
-                onChange={(e) => setHighlightColor(e.target.value)}
-                className="w-8 h-8 border border-gray-200 rounded cursor-pointer"
-                title="Highlight Color"
-              />
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Superscript/Subscript */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleSuperscript().run()}
-                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('superscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Superscript"
-              >
-                X²
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleSubscript().run()}
-                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('subscript') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Subscript"
-              >
-                X₁
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Headings */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().setParagraph().run()}
-                className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('paragraph') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-              >
-                P
-              </button>
-              {[1, 2, 3, 4].map((level) => (
-                <button
-                  key={level}
-                  type="button"
-                  onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
-                  className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('heading', { level }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                    }`}
-                >
-                  H{level}
-                </button>
-              ))}
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Lists */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleBulletList().run()}
-                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bulletList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-                title="Bullet List"
-              >
-                ●
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleOrderedList().run()}
-                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('orderedList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-                title="Numbered List"
-              >
-                1.
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleBlockquote().run()}
-                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('blockquote') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-                title="Quote"
-              >
-                "
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().toggleCodeBlock().run()}
-                className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('codeBlock') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Code Block"
-              >
-                &lt;/&gt;
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Text Alignment */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().setTextAlign('left').run()}
-                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'left' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-                title="Align Left"
-              >
-                ⇤
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().setTextAlign('center').run()}
-                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'center' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-                title="Align Center"
-              >
-                ≡
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().setTextAlign('right').run()}
-                className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive({ textAlign: 'right' }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
-                  }`}
-                title="Align Right"
-              >
-                ⇥
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Table and More */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={addTable}
-                className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                title="Insert Table"
-              >
-                📊 Table
-              </button>
-              <button
-                type="button"
-                onClick={setLink}
-                className={`px-2 py-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('link') ? 'bg-blue-100 border-blue-300 text-blue-700' : 'border-gray-200'
-                  }`}
-                title="Insert Link"
-              >
-                🔗 Link
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().setHorizontalRule().run()}
-                className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                title="Horizontal Line"
-              >
-                —
-              </button>
-            </div>
-
-            <div className="w-px h-6 bg-gray-200 mx-1"></div>
-
-            {/* Clear and Undo/Redo */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().unsetAllMarks().clearNodes().run()}
-                className="px-2 py-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors"
-                title="Clear Formatting"
-              >
-                ✕ Clear
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().undo().run()}
-                disabled={!editor.can().undo()}
-                className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Undo"
-              >
-                ↶
-              </button>
-              <button
-                type="button"
-                onClick={() => editor.chain().focus().redo().run()}
-                disabled={!editor.can().redo()}
-                className="p-2 text-xs border border-gray-200 rounded hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Redo"
-              >
-                ↷
-              </button>
-            </div>
+            ))}
           </div>
-        )
-      }
 
-      {/* Editor Area */}
-      {
-        isHtmlMode ? (
-          <textarea
-            value={htmlContent}
-            onChange={(e) => handleHtmlChange(e.target.value)}
-            className="flex-1 p-4 border-none resize-none focus:outline-none font-mono text-sm min-h-20 max-h-96"
-            placeholder="Enter HTML content..."
-          />
-        ) : (
-          <div className="flex-1 min-h-20 max-h-96 overflow-y-auto">
-            <EditorContent
-              editor={editor}
-              className="prose prose-sm max-w-none p-4 focus:outline-none rich-editor-content min-h-16"
+          {/* Error Display */}
+          {htmlError && (
+            <div className="px-4 py-2 bg-red-50 border-b border-red-200 text-red-700 text-sm">
+              <strong>HTML Error:</strong> {htmlError}
+            </div>
+          )}
+
+          {/* HTML Textarea */}
+          <div className="flex-1">
+            <textarea
+              ref={textareaRef}
+              value={htmlContent}
+              onChange={handleHtmlChange}
+              className="w-full min-h-96 p-4 font-mono text-sm border-none outline-none resize-none bg-gray-50"
+              style={{ fontFamily: 'Monaco, Consolas, "Courier New", monospace' }}
+              placeholder="Enter your HTML code here..."
+              onInput={autoResizeTextarea}
             />
           </div>
-        )
-      }
-    </div >
+
+          {/* HTML Mode Footer */}
+          <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-xs text-gray-600">
+            💡 Tip: Use the Quick Insert buttons above to add common HTML elements.
+          </div>
+        </div>
+      ) : (
+        <>
+          {/* Rich Text Toolbar */}
+          {!isPreviewMode && (
+            <div className="flex flex-wrap items-center gap-1 px-4 py-2 bg-gray-50 border-b border-gray-200">
+              {/* Formatting buttons */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleBold().run()}
+                  className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bold') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                >
+                  <strong>B</strong>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleItalic().run()}
+                  className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('italic') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                >
+                  <em>I</em>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleUnderline().run()}
+                  className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('underline') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                >
+                  <u>U</u>
+                </button>
+              </div>
+
+              <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+              {/* Headings */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().setParagraph().run()}
+                  className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('paragraph') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                >
+                  P
+                </button>
+                {[1, 2, 3, 4].map((level) => (
+                  <button
+                    key={level}
+                    type="button"
+                    onClick={() => editor.chain().focus().toggleHeading({ level }).run()}
+                    className={`px-2 py-1 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('heading', { level }) ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                      }`}
+                  >
+                    H{level}
+                  </button>
+                ))}
+              </div>
+
+              <div className="w-px h-6 bg-gray-200 mx-1"></div>
+
+              {/* Lists and Actions */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleBulletList().run()}
+                  className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('bulletList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                  title="Bullet List"
+                >
+                  ●
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                  className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('orderedList') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                  title="Numbered List"
+                >
+                  1.
+                </button>
+                <button
+                  type="button"
+                  onClick={setLink}
+                  className={`p-2 text-xs border rounded hover:bg-gray-50 transition-colors ${editor.isActive('link') ? 'bg-blue-100 border-blue-300' : 'border-gray-200'
+                    }`}
+                  title="Add Link"
+                >
+                  🔗
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Rich Text Editor Content */}
+          <div className="flex-1 p-4 rich-editor-content">
+            <EditorContent editor={editor} />
+          </div>
+        </>
+      )}
+    </div>
   );
 };
 
@@ -817,7 +706,7 @@ const AudioPlayer = ({ src, description, citation }) => {
 };
 
 // Content Block Component
-const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop, onDragOver, onBlockUpdate, onMoveUp, onMoveDown, isFirst, isLast }) => {
+const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop, onDragOver, onBlockUpdate, onMoveUp, onMoveDown, isFirst, isLast, htmlModes, toggleHtmlMode }) => {
   const renderContent = () => {
     switch (block.type) {
       case 'text':
@@ -827,6 +716,9 @@ const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop
           <RichTextEditor
             content={block.content}
             onChange={(content) => onBlockUpdate({ ...block, content })}
+            isHtmlMode={htmlModes[block.id] || false}
+            onToggleHtmlMode={() => toggleHtmlMode(block.id)}
+            isPreviewMode={false}
           />
         ) : (
           <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
@@ -862,6 +754,9 @@ const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop
                   <RichTextEditor
                     content={block.content}
                     onChange={(content) => onBlockUpdate({ ...block, content })}
+                    isHtmlMode={htmlModes[block.id] || false}
+                    onToggleHtmlMode={() => toggleHtmlMode(block.id)}
+                    isPreviewMode={false}
                   />
                 ) : (
                   <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
@@ -1060,8 +955,7 @@ const ContentBlock = ({ block, onEdit, onDelete, isEditMode, onDragStart, onDrop
 };
 
 // Section Component
-const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle }) => {
-  const [draggedBlock, setDraggedBlock] = useState(null);
+const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode }) => {  const [draggedBlock, setDraggedBlock] = useState(null);
 
   const handleBlockDragStart = (e, blockId) => {
     setDraggedBlock(blockId);
@@ -1193,6 +1087,8 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
                 onMoveDown={() => handleBlockMove(block.id, 'down')}
                 isFirst={index === 0}
                 isLast={index === section.blocks.length - 1}
+                htmlModes={htmlModes}
+                toggleHtmlMode={toggleHtmlMode}
               />
             ))}
 
@@ -1559,6 +1455,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
   const [formData, setFormData] = useState(initialData);
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [imageSource, setImageSource] = useState('upload');
+  const [modalHtmlMode, setModalHtmlMode] = useState(false); // ADD THIS LINE
   const [isLoadingVideoInfo, setIsLoadingVideoInfo] = useState(false);
 
   const handleFieldChange = useCallback((fieldName, value) => {
@@ -1569,6 +1466,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     if (isOpen) {
       setFormData(initialData);
       setIsHtmlMode(false);
+      setModalHtmlMode(false);
       setImageSource('upload');
     }
   }, [isOpen, initialData]);
@@ -1956,8 +1854,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               <RichTextEditor
                 content={formData.content || ''}
                 onChange={(content) => setFormData({ ...formData, content })}
-                isHtmlMode={isHtmlMode}
-                onToggleHtmlMode={() => setIsHtmlMode(!isHtmlMode)}
+                isHtmlMode={modalHtmlMode}
+                onToggleHtmlMode={() => setModalHtmlMode(!modalHtmlMode)}
                 isPreviewMode={false}
               />
             )}
@@ -2431,6 +2329,8 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalContentType, setModalContentType] = useState('');
   const [modalInitialData, setModalInitialData] = useState({});
+  const [htmlModes, setHtmlModes] = useState({});
+  const [modalHtmlMode, setModalHtmlMode] = useState(false);
   const [showAutoSaveRecovery, setShowAutoSaveRecovery] = useState(false);
   const [autoSaveData, setAutoSaveData] = useState(null);
   const [defaultSection, setDefaultSection] = useState('overview');
@@ -2716,6 +2616,13 @@ const LectureTemplateSystem = ({ initialData }) => {
   const showSaveIndicator = useCallback((message, type = '') => {
     setSaveIndicator({ show: true, message, type });
     setTimeout(() => setSaveIndicator({ show: false, message: '', type: '' }), 3000);
+  }, []);
+
+  const toggleHtmlMode = useCallback((blockId) => {
+    setHtmlModes(prev => ({
+      ...prev,
+      [blockId]: !prev[blockId]
+    }));
   }, []);
 
   const handleRecoverAutoSave = () => {
@@ -4033,6 +3940,8 @@ const LectureTemplateSystem = ({ initialData }) => {
             onBlockEdit={handleBlockEdit}
             isOpen={openSectionIds.includes(section.id)}
             onToggle={() => handleToggleSection(section.id)}
+            htmlModes={htmlModes}
+            toggleHtmlMode={toggleHtmlMode}
           />
         ))}
       </div>
@@ -4219,6 +4128,85 @@ const LectureTemplateSystem = ({ initialData }) => {
 
 .card-content a:hover {
   color: #1d4ed8;
+}
+/* ========================================
+   HTML MODE STYLES - Added for HTML editing functionality
+   ======================================== */
+
+/* HTML Mode Textarea */
+.html-editor-textarea {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
+  font-size: 13px;
+  line-height: 1.5;
+  tab-size: 2;
+}
+
+/* Rich Text Editor Improvements */
+.rich-editor-content .ProseMirror {
+  outline: none;
+  min-height: 100px;
+  padding: 1rem;
+}
+
+.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  float: left;
+  color: #9ca3af;
+  pointer-events: none;
+  height: 0;
+  font-style: italic;
+}
+
+/* HTML/Rich Text Toggle Button */
+.mode-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.mode-toggle.html-active {
+  background-color: #fef3c7;
+  color: #d97706;
+  border: 1px solid #fbbf24;
+}
+
+.mode-toggle.rich-active {
+  background-color: #e5e7eb;
+  color: #374151;
+  border: 1px solid #d1d5db;
+}
+
+/* HTML Error Messages */
+.html-error {
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+  padding: 8px 12px;
+  font-size: 13px;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+/* Quick Insert Buttons in HTML Mode */
+.html-quick-insert {
+  font-size: 11px;
+  padding: 4px 8px;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.html-quick-insert:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
 }
       `}</style>
     </div>

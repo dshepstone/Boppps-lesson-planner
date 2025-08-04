@@ -28,7 +28,7 @@ import CodeBlock from '@tiptap/extension-code-block';
 
 // Import extracted components and utilities
 import { ContentBlock } from './ContentBlocks';
-import AudioPlayer from './ContentBlocks/AudioPlayer';
+import AudioPlayer from './AudioPlayer';
 import RichTextEditor from './RichTextEditor';
 
 // Phase 1 Utility Imports - Content Utils
@@ -3252,7 +3252,7 @@ const LectureTemplateSystem = ({ initialData }) => {
       </button>
 
       {/* Print and Animation Styles */}
-      <style jsx="true">{`
+      <style jsx>{`
         @media print {
           .no-print, .no-print * {
             display: none !important;

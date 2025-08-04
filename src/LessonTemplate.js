@@ -4208,6 +4208,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   background-color: #f3f4f6;
   border-color: #9ca3af;
 }
+
       `}</style>
     </div>
   );

@@ -21,27 +21,58 @@ export const fetchImageAsDataUrl = async (src) => {
     }
 };
 
+// Replace any <img> tags in an HTML string with embedded data URIs
+const embedHtmlImages = async (html) => {
+    if (!html) return html;
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    const images = Array.from(container.querySelectorAll('img'));
+    await Promise.all(
+        images.map(async (img) => {
+            const src = img.getAttribute('src');
+            if (src && !src.startsWith('data:')) {
+                img.setAttribute('src', await fetchImageAsDataUrl(src));
+            }
+        })
+    );
+    return container.innerHTML;
+};
+
 export const embedImagesInSections = async (sections) => {
     return Promise.all(
         sections.map(async (section) => ({
             ...section,
             blocks: await Promise.all(
                 section.blocks.map(async (block) => {
-                    if (block.type === 'image' && block.src && !block.src.startsWith('data:')) {
-                        return { ...block, src: await fetchImageAsDataUrl(block.src) };
+                    let updatedBlock = { ...block };
+
+                    if (updatedBlock.content) {
+                        updatedBlock.content = await embedHtmlImages(updatedBlock.content);
                     }
-                    if (block.type === 'gallery' && Array.isArray(block.items)) {
-                        const items = await Promise.all(
-                            block.items.map(async (item) => {
-                                if (item.src && !item.src.startsWith('data:')) {
-                                    return { ...item, src: await fetchImageAsDataUrl(item.src) };
+
+                    if (updatedBlock.type === 'image' && updatedBlock.src && !updatedBlock.src.startsWith('data:')) {
+                        updatedBlock.src = await fetchImageAsDataUrl(updatedBlock.src);
+                    }
+
+                    if (Array.isArray(updatedBlock.items)) {
+                        updatedBlock.items = await Promise.all(
+                            updatedBlock.items.map(async (item) => {
+                                let updatedItem = { ...item };
+
+                                if (updatedItem.src && !updatedItem.src.startsWith('data:')) {
+                                    updatedItem.src = await fetchImageAsDataUrl(updatedItem.src);
                                 }
-                                return item;
+
+                                if (updatedItem.content) {
+                                    updatedItem.content = await embedHtmlImages(updatedItem.content);
+                                }
+
+                                return updatedItem;
                             })
                         );
-                        return { ...block, items };
                     }
-                    return block;
+
+                    return updatedBlock;
                 })
             ),
         }))

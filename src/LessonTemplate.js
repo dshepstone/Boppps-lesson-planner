@@ -1947,11 +1947,14 @@ const LectureTemplateSystem = ({ initialData }) => {
   };
 
   const handleAddContent = (sectionId, contentType = 'text') => {
-    if (contentType === 'text') {
+    if (contentType === 'text' || contentType === 'headline') {
       const newBlock = {
         id: generateId(),
-        type: 'text',
-        content: 'Click to edit this text content.'
+        type: contentType,
+        content:
+          contentType === 'headline'
+            ? '<h1>Headline</h1>'
+            : 'Click to edit this text content.'
       };
 
       setSections(prevSections =>
@@ -1971,11 +1974,14 @@ const LectureTemplateSystem = ({ initialData }) => {
 
   // Add a new block directly below the specified block within a section
   const handleAddBlockBelow = (blockId, contentType = 'text', sectionId) => {
-    if (contentType === 'text') {
+    if (contentType === 'text' || contentType === 'headline') {
       const newBlock = {
         id: generateId(),
-        type: 'text',
-        content: 'Click to edit this text content.'
+        type: contentType,
+        content:
+          contentType === 'headline'
+            ? '<h1>Headline</h1>'
+            : 'Click to edit this text content.'
       };
 
       setSections(prevSections =>
@@ -2449,7 +2455,9 @@ const LectureTemplateSystem = ({ initialData }) => {
       case 'text':
       case 'heading':
       case 'list':
-        return `<div class="prose max-w-none">${block.content}</div>`;
+        return `<div class="rich-editor-content">${block.content}</div>`;
+      case 'headline':
+        return `<div class="headline-preview">${block.content}</div>`;
       case 'info-box':
       case 'exercise-box':
       case 'warning-box':
@@ -2458,7 +2466,7 @@ const LectureTemplateSystem = ({ initialData }) => {
           'exercise-box': { bg: 'bg-emerald-50', border: 'border-l-4 border-emerald-400' },
           'warning-box': { bg: 'bg-amber-50', border: 'border-l-4 border-amber-400' }
         }[block.type];
-        return `<div class="p-4 rounded-lg ${boxConfig.bg} ${boxConfig.border}"><div class="prose max-w-none">${block.content}</div></div>`;
+        return `<div class="p-4 rounded-lg ${boxConfig.bg} ${boxConfig.border}"><div class="rich-editor-content">${block.content}</div></div>`;
       case 'video':
         const aspectClass = { '16-9': 'pb-[56.25%]', '4-3': 'pb-[75%]', '1-1': 'pb-[100%]', '21-9': 'pb-[42.85%]' }[block.aspectRatio] || 'pb-[56.25%]';
         const videoCitation = generateAPACitation(block.videoTitle, block.videoAuthor, block.videoDate, block.videoSource, block.videoUrl);

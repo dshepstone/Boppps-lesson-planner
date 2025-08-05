@@ -137,6 +137,14 @@ body {
   border-color: #3b82f6 !important;
   background-color: rgba(59, 130, 246, 0.1) !important;
 }
+
+.rich-editor-content {
+  @apply max-w-none;
+}
+
+.headline-preview {
+  @apply text-[2.5rem] font-bold text-primary-700;
+}
 /* Enhanced Rich Text Editor Styles - Add these to your existing index.css */
 
 /* Enhanced Typography and Spacing */

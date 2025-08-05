@@ -10,7 +10,9 @@ export const blockToHtml = (block) => {
         case 'text':
         case 'heading':
         case 'list':
-            return `<div class="my-4 prose max-w-none">${block.content}</div>`;
+            return `<div class="my-4 rich-editor-content">${block.content}</div>`;
+        case 'headline':
+            return `<div class="headline-preview">${block.content}</div>`;
 
         case 'info-box':
         case 'exercise-box':
@@ -23,7 +25,7 @@ export const blockToHtml = (block) => {
 
             return `
         <div class="my-6 p-4 rounded-lg ${boxConfig.bg} ${boxConfig.border}">
-          <div class="prose max-w-none">${block.content}</div>
+          <div class="rich-editor-content">${block.content}</div>
         </div>
       `;
 

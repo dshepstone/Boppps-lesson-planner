@@ -4,6 +4,7 @@ import {
     ChevronDown,
     Plus,
     FileText,
+    Heading,
     List,
     AlertCircle,
     Video,
@@ -22,6 +23,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
 
     const options = [
         { type: 'text', icon: FileText, label: 'Text Block', color: 'text-gray-600' },
+        { type: 'headline', icon: Heading, label: 'Headline', color: 'text-indigo-600' },
         { type: 'heading', icon: FileText, label: 'Heading', color: 'text-blue-600' },
         { type: 'list', icon: List, label: 'List', color: 'text-green-600' },
         { type: 'info-box', icon: AlertCircle, label: 'Info Box', color: 'text-blue-500' },

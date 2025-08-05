@@ -1,5 +1,6 @@
 import React from 'react';
 import TextRenderer from './renderers/TextRenderer';
+import HeadlineRenderer from './renderers/HeadlineRenderer';
 import BoxRenderer from './renderers/BoxRenderer';
 import VideoRenderer from './renderers/VideoRenderer';
 import ImageRenderer from './renderers/ImageRenderer';
@@ -21,6 +22,9 @@ const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtml
         case 'heading':
         case 'list':
             return <TextRenderer {...commonProps} />;
+
+        case 'headline':
+            return <HeadlineRenderer {...commonProps} />;
 
         case 'info-box':
         case 'exercise-box':

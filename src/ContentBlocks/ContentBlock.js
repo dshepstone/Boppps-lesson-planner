@@ -14,6 +14,7 @@ import AddBelowDropdown from './Section';
 
 // Import your modular components
 import RichTextEditor from '../RichTextEditor';
+import HeadlineEditor from '../HeadlineEditor';
 
 // Import utility functions and components (adjust paths based on your structure)
 import {
@@ -125,7 +126,19 @@ const ContentBlock = ({
                         />
                     </div>
                 ) : (
-                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
+                    <div className="rich-editor-content" dangerouslySetInnerHTML={{ __html: block.content }} />
+                );
+
+            case 'headline':
+                return isEditMode ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <HeadlineEditor
+                            content={block.content}
+                            onChange={(content) => onBlockUpdate({ ...block, content })}
+                        />
+                    </div>
+                ) : (
+                    <div className="headline-preview" dangerouslySetInnerHTML={{ __html: block.content }} />
                 );
 
             case 'info-box':
@@ -165,7 +178,7 @@ const ContentBlock = ({
                                         />
                                     </div>
                                 ) : (
-                                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
+                                    <div className="rich-editor-content" dangerouslySetInnerHTML={{ __html: block.content }} />
                                 )}
                             </div>
                         </div>

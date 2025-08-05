@@ -1,6 +1,7 @@
 export { default as ContentBlock } from './ContentBlock';
 export { default as BlockRenderer } from './BlockRenderer';
 export { default as TextRenderer } from './renderers/TextRenderer';
+export { default as HeadlineRenderer } from './renderers/HeadlineRenderer';
 export { default as VideoRenderer } from './renderers/VideoRenderer';
 export { default as ImageRenderer } from './renderers/ImageRenderer';
 export { default as AudioRenderer } from './renderers/AudioRenderer';

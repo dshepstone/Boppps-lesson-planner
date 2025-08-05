@@ -4,7 +4,7 @@
 
 import React from 'react';
 import { AlertCircle, CheckCircle, AlertTriangle } from 'lucide-react';
-import RichTextEditor from '../../RichTextEditor'; // Adjust path if needed
+import RichTextEditor from '../../RichTextEditor';
 
 const BoxRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlMode }) => {
     const boxConfig = {
@@ -39,7 +39,7 @@ const BoxRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlMo
                             isPreviewMode={false}
                         />
                     ) : (
-                        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
+                        <div className="rich-editor-content" dangerouslySetInnerHTML={{ __html: block.content }} />
                     )}
                 </div>
             </div>

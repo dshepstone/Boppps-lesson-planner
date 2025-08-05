@@ -5,7 +5,7 @@ import { generateImageCitation, generateVideoCitation, generateAudioCitation } f
 import { CARD_STYLES, IMAGE_SIZES, GALLERY_COLUMNS } from './constants';
 
 // Helper to embed external images as data URIs for portable exports
-const fetchImageAsDataUrl = async (src) => {
+export const fetchImageAsDataUrl = async (src) => {
     try {
         const response = await fetch(src);
         const blob = await response.blob();
@@ -187,6 +187,15 @@ export const getVideoEmbedHtml = (src, platform) => {
 
 // Generate complete HTML export
 export const generateCompleteHtml = async (sections, headerData, displayDate, logoHtml) => {
+    let embeddedLogoHtml = logoHtml;
+    if (logoHtml) {
+        const match = logoHtml.match(/src="([^"]+)"/);
+        if (match && !match[1].startsWith('data:')) {
+            const dataUrl = await fetchImageAsDataUrl(match[1]);
+            embeddedLogoHtml = logoHtml.replace(match[1], dataUrl);
+        }
+    }
+
     const processedSections = await embedImagesInSections(sections);
     const headerHtml = `
     <header class="bg-white border-b border-gray-200">
@@ -194,7 +203,7 @@ export const generateCompleteHtml = async (sections, headerData, displayDate, lo
         <div class="flex items-start justify-between space-x-6">
           <div class="flex flex-col items-center md:items-start space-y-3">
             <p class="text-lg text-gray-600">${displayDate}</p>
-            ${logoHtml ? `<div class="flex items-center space-x-3">${logoHtml}<div><h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1></div></div>` : `<h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1>`}
+            ${embeddedLogoHtml ? `<div class="flex items-center space-x-3">${embeddedLogoHtml}<div><h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1></div></div>` : `<h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1>`}
             <p class="text-sm text-gray-500">Instructor: ${headerData.instructorName} | ${headerData.instructorEmail}</p>
           </div>
         </div>

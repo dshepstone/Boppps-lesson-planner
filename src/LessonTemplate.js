@@ -61,7 +61,8 @@ import {
   blockToHtml,
   getVideoEmbedHtml,
   generateCompleteHtml,
-  embedImagesInSections
+  embedImagesInSections,
+  fetchImageAsDataUrl
 } from './Utils/exportUtils';
 
 // Phase 1 Utility Imports - Validation Utils
@@ -1623,7 +1624,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [showLogoSettings, setShowLogoSettings] = useState(false);
 
   // NEW: Use the logo context
-  const { getLogoHtml, hasLogo } = useLogo();
+  const { logo, getLogoHtml, hasLogo } = useLogo();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
@@ -2035,10 +2036,19 @@ const LectureTemplateSystem = ({ initialData }) => {
     showSaveIndicator('➕ New section added');
   };
 
+  const buildLogoHtml = async () => {
+    if (!logo) return '';
+    let src = logo;
+    if (!src.startsWith('data:')) {
+      src = await fetchImageAsDataUrl(src);
+    }
+    return `<img src="${src}" alt="School Logo" class="logo" style="max-height: 80px; margin-bottom: 10px;" />`;
+  };
+
   const handleExportPDF = async () => {
     showSaveIndicator('📄 Preparing PDF...', 'saving');
 
-    const logoHtml = getLogoHtml('logo');
+    const logoHtml = await buildLogoHtml();
 
     // Create clean header for PDF
     const headerHtml = `
@@ -2558,7 +2568,7 @@ const LectureTemplateSystem = ({ initialData }) => {
 
   const handleExportHTML = async () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
-    const logoHtml = getLogoHtml('logo');
+    const logoHtml = await buildLogoHtml();
 
     const processedSections = await embedImagesInSections(sections);
 

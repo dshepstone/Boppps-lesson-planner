@@ -48,8 +48,16 @@ const AddBelowDropdown = ({ onAddContent }) => {
             if (!buttonRef.current || !menuRef.current) return;
             const buttonRect = buttonRef.current.getBoundingClientRect();
             const menuHeight = menuRef.current.offsetHeight;
-            const spaceBelow = window.innerHeight - buttonRect.bottom;
+
+            // Determine available space within the closest accordion container
+            const container = buttonRef.current.closest('.accordion-content-wrapper');
+            const containerRect = container
+                ? container.getBoundingClientRect()
+                : { top: 0, bottom: window.innerHeight };
+
+            const spaceBelow = containerRect.bottom - buttonRect.bottom;
             const top = spaceBelow < menuHeight ? buttonRect.top - menuHeight : buttonRect.bottom;
+
             setPosition({
                 top: top + window.scrollY,
                 left: buttonRect.left + window.scrollX
@@ -126,7 +134,10 @@ const AddBelowDropdown = ({ onAddContent }) => {
     return (
         <div className="relative" ref={buttonRef}>
             <button
-                onClick={toggleDropdown}
+                onClick={(e) => {
+                    e.stopPropagation();
+                    toggleDropdown();
+                }}
                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md"
             >
                 <Plus size={16} />

@@ -4,6 +4,50 @@
 import { generateImageCitation, generateVideoCitation, generateAudioCitation } from './contentUtils';
 import { CARD_STYLES, IMAGE_SIZES, GALLERY_COLUMNS } from './constants';
 
+// Helper to embed external images as data URIs for portable exports
+const fetchImageAsDataUrl = async (src) => {
+    try {
+        const response = await fetch(src);
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Failed to embed image:', src, error);
+        return src;
+    }
+};
+
+export const embedImagesInSections = async (sections) => {
+    return Promise.all(
+        sections.map(async (section) => ({
+            ...section,
+            blocks: await Promise.all(
+                section.blocks.map(async (block) => {
+                    if (block.type === 'image' && block.src && !block.src.startsWith('data:')) {
+                        return { ...block, src: await fetchImageAsDataUrl(block.src) };
+                    }
+                    if (block.type === 'gallery' && Array.isArray(block.items)) {
+                        const items = await Promise.all(
+                            block.items.map(async (item) => {
+                                if (item.src && !item.src.startsWith('data:')) {
+                                    return { ...item, src: await fetchImageAsDataUrl(item.src) };
+                                }
+                                return item;
+                            })
+                        );
+                        return { ...block, items };
+                    }
+                    return block;
+                })
+            ),
+        }))
+    );
+};
+
 // Content Block to HTML Conversion
 export const blockToHtml = (block) => {
     switch (block.type) {
@@ -142,7 +186,8 @@ export const getVideoEmbedHtml = (src, platform) => {
 };
 
 // Generate complete HTML export
-export const generateCompleteHtml = (sections, headerData, displayDate, logoHtml) => {
+export const generateCompleteHtml = async (sections, headerData, displayDate, logoHtml) => {
+    const processedSections = await embedImagesInSections(sections);
     const headerHtml = `
     <header class="bg-white border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-6 py-12">
@@ -157,7 +202,7 @@ export const generateCompleteHtml = (sections, headerData, displayDate, logoHtml
     </header>
   `;
 
-    const sectionsHtml = sections.map(section => {
+    const sectionsHtml = processedSections.map(section => {
         const sectionBlocksHtml = section.blocks.map(block => blockToHtml(block)).join('');
         return `
       <section class="mb-12">

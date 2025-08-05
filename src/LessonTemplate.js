@@ -60,7 +60,8 @@ import {
 import {
   blockToHtml,
   getVideoEmbedHtml,
-  generateCompleteHtml
+  generateCompleteHtml,
+  embedImagesInSections
 } from './Utils/exportUtils';
 
 // Phase 1 Utility Imports - Validation Utils
@@ -2034,7 +2035,7 @@ const LectureTemplateSystem = ({ initialData }) => {
     showSaveIndicator('➕ New section added');
   };
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     showSaveIndicator('📄 Preparing PDF...', 'saving');
 
     const logoHtml = getLogoHtml('logo');
@@ -2066,7 +2067,8 @@ const LectureTemplateSystem = ({ initialData }) => {
     `;
 
     // Generate clean sections HTML with minimal spacing
-    const sectionsHtml = sections.map((section, index) => {
+    const processedSections = await embedImagesInSections(sections);
+    const sectionsHtml = processedSections.map((section, index) => {
       const label = studentFriendlyTitles[section.id] || section.title;
       const blocksHtml = section.blocks.map(getBlockHtml).join('');
 
@@ -2554,9 +2556,11 @@ const LectureTemplateSystem = ({ initialData }) => {
     }
   };
 
-  const handleExportHTML = () => {
+  const handleExportHTML = async () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
     const logoHtml = getLogoHtml('logo');
+
+    const processedSections = await embedImagesInSections(sections);
 
     // inside handleExportHTML (App.js)
     const headerHtml = `
@@ -2618,7 +2622,7 @@ const LectureTemplateSystem = ({ initialData }) => {
     };
 
     // inside handleExportHTML (App.js)
-    const sectionsHtml = sections.map(section => {
+    const sectionsHtml = processedSections.map(section => {
       const label = studentFriendlyTitles[section.id] || section.title;
       const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
       const blocksHtml = section.blocks.map(getBlockHtml).join('');

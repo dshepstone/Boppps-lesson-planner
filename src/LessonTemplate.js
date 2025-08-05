@@ -3088,10 +3088,11 @@ const LectureTemplateSystem = ({ initialData }) => {
       {/* Control Panel Toggle Button */}
       <button
         onClick={() => setIsControlPanelOpen(!isControlPanelOpen)}
-        className={`fixed top-6 z-50 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'
+        className={`fixed top-6 z-50 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center gap-2 shadow-lg transition-all no-print h-12 px-4 ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'
           }`}
       >
         <Settings size={20} />
+        <span>Customize Template</span>
       </button>
 
       <ControlPanel
@@ -3193,27 +3194,7 @@ const LectureTemplateSystem = ({ initialData }) => {
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 no-print">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between py-2">
-            {/* Left side - Collapse/Expand All Button */}
-            <button
-              onClick={handleToggleAllSections}
-              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-              title={openSectionIds.length > 0 ? "Collapse All Sections" : "Expand All Sections"}
-            >
-              {openSectionIds.length > 0 ? (
-                <React.Fragment>
-                  <ChevronUp size={16} />
-                  Collapse All
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  <ChevronDown size={16} />
-                  Expand All
-                </React.Fragment>
-              )}
-            </button>
-
-            {/* Center - Navigation Links */}
+          <div className="py-2 flex justify-center">
             <ul className="flex justify-center gap-1 flex-wrap">
               {sections.map(section => (
                 <li key={section.id}>
@@ -3231,14 +3212,55 @@ const LectureTemplateSystem = ({ initialData }) => {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      </nav>
 
-            {/* Right side - Section Count */}
-            <div className="text-sm text-gray-500">
+      {/* Control Bar */}
+      <div className="bg-gray-50 border-b border-gray-200 no-print">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { if (!isEditMode) handleToggleEditMode(); }}
+              className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${isEditMode
+                ? 'bg-slate-700 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+            >
+              Edit Mode
+            </button>
+            <button
+              onClick={() => { if (isEditMode) handleToggleEditMode(); }}
+              className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${!isEditMode
+                ? 'bg-slate-700 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+            >
+              Preview Mode
+            </button>
+            <button
+              onClick={handleToggleAllSections}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+              title={openSectionIds.length > 0 ? "Collapse All Sections" : "Expand All Sections"}
+            >
+              {openSectionIds.length > 0 ? (
+                <React.Fragment>
+                  <ChevronUp size={16} />
+                  Collapse All
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <ChevronDown size={16} />
+                  Expand All
+                </React.Fragment>
+              )}
+            </button>
+            <div className="ml-auto text-sm text-gray-500">
               {openSectionIds.length}/{sections.length} open
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-16 py-12">

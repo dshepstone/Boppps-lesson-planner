@@ -3263,6 +3263,27 @@ const LectureTemplateSystem = ({ initialData }) => {
                 </React.Fragment>
               )}
             </button>
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Download size={16} />
+              Export
+            </button>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleLoad}
+              className="hidden"
+              id="toolbarLoadFile"
+            />
+            <button
+              onClick={() => document.getElementById('toolbarLoadFile').click()}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Upload size={16} />
+              Load
+            </button>
             <div className="ml-auto text-sm text-gray-500">
               {openSectionIds.length}/{sections.length} open
             </div>

@@ -141,6 +141,22 @@ const ContentBlock = ({
                     <div className="headline-preview" dangerouslySetInnerHTML={{ __html: block.content }} />
                 );
 
+            case 'html':
+                return isEditMode ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <textarea
+                            value={block.content}
+                            onChange={(e) => onBlockUpdate({ ...block, content: e.target.value })}
+                            className="w-full min-h-[150px] p-3 border border-gray-300 rounded-lg font-mono text-sm"
+                        />
+                    </div>
+                ) : (
+                    <div
+                        className="html-block-preview rich-editor-content"
+                        dangerouslySetInnerHTML={{ __html: block.content }}
+                    />
+                );
+
             case 'info-box':
             case 'exercise-box':
             case 'warning-box':

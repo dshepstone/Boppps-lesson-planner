@@ -7,6 +7,7 @@ import ImageRenderer from './renderers/ImageRenderer';
 import GalleryRenderer from './renderers/GalleryRenderer';
 import AudioRenderer from './renderers/AudioRenderer';
 import CardRenderer from './renderers/CardRenderer';
+import HtmlRenderer from './renderers/HtmlRenderer';
 
 const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlMode }) => {
     const commonProps = {
@@ -25,6 +26,9 @@ const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtml
 
         case 'headline':
             return <HeadlineRenderer {...commonProps} />;
+
+        case 'html':
+            return <HtmlRenderer {...commonProps} />;
 
         case 'info-box':
         case 'exercise-box':

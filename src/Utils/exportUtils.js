@@ -89,6 +89,9 @@ export const blockToHtml = (block) => {
         case 'headline':
             return `<div class="headline-preview">${block.content}</div>`;
 
+        case 'html':
+            return `<div class="html-block-preview rich-editor-content">${block.content}</div>`;
+
         case 'info-box':
         case 'exercise-box':
         case 'warning-box':

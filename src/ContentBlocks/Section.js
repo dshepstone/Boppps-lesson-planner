@@ -5,6 +5,7 @@ import {
     Plus,
     FileText,
     Heading,
+    Code,
     List,
     AlertCircle,
     Video,
@@ -24,6 +25,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
     const options = [
         { type: 'text', icon: FileText, label: 'Text Block', color: 'text-gray-600' },
         { type: 'headline', icon: Heading, label: 'Headline', color: 'text-indigo-600' },
+        { type: 'html', icon: Code, label: 'HTML Block', color: 'text-pink-600' },
         { type: 'heading', icon: FileText, label: 'Heading', color: 'text-blue-600' },
         { type: 'list', icon: List, label: 'List', color: 'text-green-600' },
         { type: 'info-box', icon: AlertCircle, label: 'Info Box', color: 'text-blue-500' },
@@ -103,7 +105,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
                   <li className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
                       Text Content
                   </li>
-                  {options.slice(0, 6).map((option) => (
+                  {options.slice(0, 7).map((option) => (
                       <li key={option.type}>
                           <button
                               onClick={() => handleSelect(option.type)}
@@ -117,7 +119,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
                   <li className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-t border-gray-100 border-b border-gray-100 mt-1">
                       Media Content
                   </li>
-                  {options.slice(6).map((option) => (
+                  {options.slice(7).map((option) => (
                       <li key={option.type}>
                           <button
                               onClick={() => handleSelect(option.type)}

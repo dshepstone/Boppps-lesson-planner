@@ -145,6 +145,10 @@ body {
 .headline-preview {
   @apply text-[2.5rem] font-bold text-primary-700;
 }
+
+.html-block-preview {
+  @apply my-4 p-4 border border-gray-200 rounded-lg;
+}
 /* Enhanced Rich Text Editor Styles - Add these to your existing index.css */
 
 /* Enhanced Typography and Spacing */

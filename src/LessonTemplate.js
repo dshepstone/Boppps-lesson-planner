@@ -1949,13 +1949,15 @@ const LectureTemplateSystem = ({ initialData }) => {
   };
 
   const handleAddContent = (sectionId, contentType = 'text') => {
-    if (contentType === 'text' || contentType === 'headline') {
+    if (contentType === 'text' || contentType === 'headline' || contentType === 'html') {
       const newBlock = {
         id: generateId(),
         type: contentType,
         content:
           contentType === 'headline'
             ? '<h1>Headline</h1>'
+            : contentType === 'html'
+            ? '<div>Custom HTML</div>'
             : 'Click to edit this text content.'
       };
 
@@ -1966,7 +1968,7 @@ const LectureTemplateSystem = ({ initialData }) => {
             : section
         )
       );
-      showSaveIndicator('➕ Text content added');
+      showSaveIndicator(contentType === 'html' ? '➕ HTML content added' : '➕ Text content added');
     } else {
       setModalContentType(contentType);
       setModalInitialData({ sectionId });
@@ -1976,13 +1978,15 @@ const LectureTemplateSystem = ({ initialData }) => {
 
   // Add a new block directly below the specified block within a section
   const handleAddBlockBelow = (blockId, contentType = 'text', sectionId) => {
-    if (contentType === 'text' || contentType === 'headline') {
+    if (contentType === 'text' || contentType === 'headline' || contentType === 'html') {
       const newBlock = {
         id: generateId(),
         type: contentType,
         content:
           contentType === 'headline'
             ? '<h1>Headline</h1>'
+            : contentType === 'html'
+            ? '<div>Custom HTML</div>'
             : 'Click to edit this text content.'
       };
 
@@ -1999,7 +2003,7 @@ const LectureTemplateSystem = ({ initialData }) => {
           return { ...section, blocks };
         })
       );
-      showSaveIndicator('➕ Text content added');
+      showSaveIndicator(contentType === 'html' ? '➕ HTML content added' : '➕ Text content added');
     } else {
       setModalContentType(contentType);
       setModalInitialData({ sectionId, insertAfterBlockId: blockId });
@@ -2470,6 +2474,8 @@ const LectureTemplateSystem = ({ initialData }) => {
         return `<div class="rich-editor-content">${block.content}</div>`;
       case 'headline':
         return `<div class="headline-preview">${block.content}</div>`;
+      case 'html':
+        return `<div class="html-block-preview rich-editor-content">${block.content}</div>`;
       case 'info-box':
       case 'exercise-box':
       case 'warning-box':

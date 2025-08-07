@@ -3,7 +3,7 @@
 // COPY AND PASTE this EXACT code:
 
 import React from 'react';
-import RichTextEditor from '../../RichTextEditor'; // Adjust path if needed
+import RichTextEditor from '../../RichTextEditor';
 
 const TextRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlMode }) => {
     return isEditMode ? (
@@ -15,7 +15,7 @@ const TextRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlM
             isPreviewMode={false}
         />
     ) : (
-        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
+        <div className="rich-editor-content" dangerouslySetInnerHTML={{ __html: block.content }} />
     );
 };
 

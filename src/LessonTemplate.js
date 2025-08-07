@@ -10,7 +10,6 @@ import SchoolLogoSettings from './SchoolLogoSettings';
 // Enhanced Tiptap imports - including all new extensions
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -61,7 +60,9 @@ import {
 import {
   blockToHtml,
   getVideoEmbedHtml,
-  generateCompleteHtml
+  generateCompleteHtml,
+  embedImagesInSections,
+  fetchImageAsDataUrl
 } from './Utils/exportUtils';
 
 // Phase 1 Utility Imports - Validation Utils
@@ -239,7 +240,7 @@ const studentFriendlyTitles = {
 };
 
 // Section Component
-const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode }) => {
+const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow }) => {
   const [draggedBlock, setDraggedBlock] = useState(null);
 
   const handleBlockDragStart = (e, blockId) => {
@@ -322,7 +323,7 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
         className={`${colorConfig.bg} ${colorConfig.hover} text-white px-8 py-6 cursor-pointer flex justify-between items-center relative overflow-hidden transition-colors no-print`}
         onClick={onToggle}
       >
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-xl font-semibold text-white">
           {headerLabel}
         </h2>
 
@@ -373,6 +374,8 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
                 isLast={index === section.blocks.length - 1}
                 htmlModes={htmlModes}
                 toggleHtmlMode={toggleHtmlMode}
+                onAddBlockBelow={onAddBlockBelow}
+                sectionId={section.id}
               />
             ))}
 
@@ -949,7 +952,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               columns: formData.galleryColumns || '2',
               items: items,
               sectionId: formData.sectionId,  // Preserve sectionId for handleModalSave
-              isEditing: formData.isEditing   // Preserve isEditing flag
+              isEditing: formData.isEditing,  // Preserve isEditing flag
+              insertAfterBlockId: formData.insertAfterBlockId
             };
 
             console.log('Gallery block being saved:', galleryBlock); // Debug log
@@ -994,7 +998,8 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               imageSource: formData.image_source || '',
               imageDate: formData.image_date || '',
               sectionId: formData.sectionId,  // Preserve sectionId
-              isEditing: formData.isEditing   // Preserve isEditing flag
+              isEditing: formData.isEditing,   // Preserve isEditing flag
+              insertAfterBlockId: formData.insertAfterBlockId
             };
 
             console.log('Image block being saved:', imageBlock); // Debug log
@@ -1025,7 +1030,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           processedData.src = embedHtml.match(/src="([^"]*)"/)?.[1];
         }
 
-        onSave({ ...processedData, type: 'video' });
+        onSave({ ...processedData, type: 'video', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
 
       case 'audio':
@@ -1046,7 +1051,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
         processedData.audioSourceInfo = formData.audioSourceInfo;
         processedData.audioDateInfo = formData.audioDateInfo;
 
-        onSave({ ...processedData, type: 'audio' });
+        onSave({ ...processedData, type: 'audio', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
 
       case 'cards':
@@ -1098,11 +1103,11 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
         processedData.layout = formData.cardLayout || '2x1';
         processedData.style = formData.cardStyle || 'info';
-        onSave({ ...processedData, type: 'cards' });
+        onSave({ ...processedData, type: 'cards', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
 
       default:
-        onSave({ ...processedData, type: contentType });
+        onSave({ ...processedData, type: contentType, sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
         break;
     }
 
@@ -1619,7 +1624,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [showLogoSettings, setShowLogoSettings] = useState(false);
 
   // NEW: Use the logo context
-  const { getLogoHtml, hasLogo } = useLogo();
+  const { logo, getLogoHtml, hasLogo } = useLogo();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [tempTitle, setTempTitle] = useState('');
@@ -1944,11 +1949,16 @@ const LectureTemplateSystem = ({ initialData }) => {
   };
 
   const handleAddContent = (sectionId, contentType = 'text') => {
-    if (contentType === 'text') {
+    if (contentType === 'text' || contentType === 'headline' || contentType === 'html') {
       const newBlock = {
         id: generateId(),
-        type: 'text',
-        content: 'Click to edit this text content.'
+        type: contentType,
+        content:
+          contentType === 'headline'
+            ? '<h1>Headline</h1>'
+            : contentType === 'html'
+            ? '<div>Custom HTML</div>'
+            : 'Click to edit this text content.'
       };
 
       setSections(prevSections =>
@@ -1958,10 +1968,45 @@ const LectureTemplateSystem = ({ initialData }) => {
             : section
         )
       );
-      showSaveIndicator('➕ Text content added');
+      showSaveIndicator(contentType === 'html' ? '➕ HTML content added' : '➕ Text content added');
     } else {
       setModalContentType(contentType);
       setModalInitialData({ sectionId });
+      setIsModalOpen(true);
+    }
+  };
+
+  // Add a new block directly below the specified block within a section
+  const handleAddBlockBelow = (blockId, contentType = 'text', sectionId) => {
+    if (contentType === 'text' || contentType === 'headline' || contentType === 'html') {
+      const newBlock = {
+        id: generateId(),
+        type: contentType,
+        content:
+          contentType === 'headline'
+            ? '<h1>Headline</h1>'
+            : contentType === 'html'
+            ? '<div>Custom HTML</div>'
+            : 'Click to edit this text content.'
+      };
+
+      setSections(prevSections =>
+        prevSections.map(section => {
+          if (section.id !== sectionId) return section;
+          const blocks = [...section.blocks];
+          const index = blocks.findIndex(b => b.id === blockId);
+          if (index === -1) {
+            blocks.push(newBlock);
+          } else {
+            blocks.splice(index + 1, 0, newBlock);
+          }
+          return { ...section, blocks };
+        })
+      );
+      showSaveIndicator(contentType === 'html' ? '➕ HTML content added' : '➕ Text content added');
+    } else {
+      setModalContentType(contentType);
+      setModalInitialData({ sectionId, insertAfterBlockId: blockId });
       setIsModalOpen(true);
     }
   };
@@ -1995,10 +2040,19 @@ const LectureTemplateSystem = ({ initialData }) => {
     showSaveIndicator('➕ New section added');
   };
 
-  const handleExportPDF = () => {
+  const buildLogoHtml = async () => {
+    if (!logo) return '';
+    let src = logo;
+    if (!src.startsWith('data:')) {
+      src = await fetchImageAsDataUrl(src);
+    }
+    return `<img src="${src}" alt="School Logo" class="logo" style="max-height: 80px; margin-bottom: 10px;" />`;
+  };
+
+  const handleExportPDF = async () => {
     showSaveIndicator('📄 Preparing PDF...', 'saving');
 
-    const logoHtml = getLogoHtml('logo');
+    const logoHtml = await buildLogoHtml();
 
     // Create clean header for PDF
     const headerHtml = `
@@ -2027,7 +2081,8 @@ const LectureTemplateSystem = ({ initialData }) => {
     `;
 
     // Generate clean sections HTML with minimal spacing
-    const sectionsHtml = sections.map((section, index) => {
+    const processedSections = await embedImagesInSections(sections);
+    const sectionsHtml = processedSections.map((section, index) => {
       const label = studentFriendlyTitles[section.id] || section.title;
       const blocksHtml = section.blocks.map(getBlockHtml).join('');
 
@@ -2416,7 +2471,11 @@ const LectureTemplateSystem = ({ initialData }) => {
       case 'text':
       case 'heading':
       case 'list':
-        return `<div class="prose max-w-none">${block.content}</div>`;
+        return `<div class="rich-editor-content">${block.content}</div>`;
+      case 'headline':
+        return `<div class="headline-preview">${block.content}</div>`;
+      case 'html':
+        return `<div class="html-block-preview rich-editor-content">${block.content}</div>`;
       case 'info-box':
       case 'exercise-box':
       case 'warning-box':
@@ -2425,7 +2484,7 @@ const LectureTemplateSystem = ({ initialData }) => {
           'exercise-box': { bg: 'bg-emerald-50', border: 'border-l-4 border-emerald-400' },
           'warning-box': { bg: 'bg-amber-50', border: 'border-l-4 border-amber-400' }
         }[block.type];
-        return `<div class="p-4 rounded-lg ${boxConfig.bg} ${boxConfig.border}"><div class="prose max-w-none">${block.content}</div></div>`;
+        return `<div class="p-4 rounded-lg ${boxConfig.bg} ${boxConfig.border}"><div class="rich-editor-content">${block.content}</div></div>`;
       case 'video':
         const aspectClass = { '16-9': 'pb-[56.25%]', '4-3': 'pb-[75%]', '1-1': 'pb-[100%]', '21-9': 'pb-[42.85%]' }[block.aspectRatio] || 'pb-[56.25%]';
         const videoCitation = generateAPACitation(block.videoTitle, block.videoAuthor, block.videoDate, block.videoSource, block.videoUrl);
@@ -2513,9 +2572,11 @@ const LectureTemplateSystem = ({ initialData }) => {
     }
   };
 
-  const handleExportHTML = () => {
+  const handleExportHTML = async () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
-    const logoHtml = getLogoHtml('logo');
+    const logoHtml = await buildLogoHtml();
+
+    const processedSections = await embedImagesInSections(sections);
 
     // inside handleExportHTML (App.js)
     const headerHtml = `
@@ -2577,7 +2638,7 @@ const LectureTemplateSystem = ({ initialData }) => {
     };
 
     // inside handleExportHTML (App.js)
-    const sectionsHtml = sections.map(section => {
+    const sectionsHtml = processedSections.map(section => {
       const label = studentFriendlyTitles[section.id] || section.title;
       const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
       const blocksHtml = section.blocks.map(getBlockHtml).join('');
@@ -2837,7 +2898,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   // This should replace the existing handleModalSave function in the main component
 
   const handleModalSave = (blockData) => {
-    const { sectionId, isEditing, ...content } = blockData;
+    const { sectionId, isEditing, insertAfterBlockId, ...content } = blockData;
 
     console.log('handleModalSave received:', blockData); // Debug log
 
@@ -2888,11 +2949,21 @@ const LectureTemplateSystem = ({ initialData }) => {
 
       const targetSectionId = sectionId || defaultSection || 'overview';
       setSections(prevSections =>
-        prevSections.map(section =>
-          section.id === targetSectionId
-            ? { ...section, blocks: [...section.blocks, newBlock] }
-            : section
-        )
+        prevSections.map(section => {
+          if (section.id !== targetSectionId) return section;
+          const blocks = [...section.blocks];
+          if (insertAfterBlockId) {
+            const index = blocks.findIndex(b => b.id === insertAfterBlockId);
+            if (index !== -1) {
+              blocks.splice(index + 1, 0, newBlock);
+            } else {
+              blocks.push(newBlock);
+            }
+          } else {
+            blocks.push(newBlock);
+          }
+          return { ...section, blocks };
+        })
       );
       showSaveIndicator(`💾 ${content.type || modalContentType} content added`);
     }
@@ -3045,10 +3116,11 @@ const LectureTemplateSystem = ({ initialData }) => {
       {/* Control Panel Toggle Button */}
       <button
         onClick={() => setIsControlPanelOpen(!isControlPanelOpen)}
-        className={`fixed top-6 z-50 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'
+        className={`fixed top-6 z-50 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center gap-2 shadow-lg transition-all no-print h-12 px-4 ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'
           }`}
       >
         <Settings size={20} />
+        <span>Customize Template</span>
       </button>
 
       <ControlPanel
@@ -3150,27 +3222,7 @@ const LectureTemplateSystem = ({ initialData }) => {
       {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 no-print">
         <div className="max-w-7xl mx-auto px-6">
-          <div className="flex items-center justify-between py-2">
-            {/* Left side - Collapse/Expand All Button */}
-            <button
-              onClick={handleToggleAllSections}
-              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
-              title={openSectionIds.length > 0 ? "Collapse All Sections" : "Expand All Sections"}
-            >
-              {openSectionIds.length > 0 ? (
-                <React.Fragment>
-                  <ChevronUp size={16} />
-                  Collapse All
-                </React.Fragment>
-              ) : (
-                <React.Fragment>
-                  <ChevronDown size={16} />
-                  Expand All
-                </React.Fragment>
-              )}
-            </button>
-
-            {/* Center - Navigation Links */}
+          <div className="py-2 flex justify-center">
             <ul className="flex justify-center gap-1 flex-wrap">
               {sections.map(section => (
                 <li key={section.id}>
@@ -3188,14 +3240,76 @@ const LectureTemplateSystem = ({ initialData }) => {
                 </li>
               ))}
             </ul>
+          </div>
+        </div>
+      </nav>
 
-            {/* Right side - Section Count */}
-            <div className="text-sm text-gray-500">
+      {/* Control Bar */}
+      <div className="bg-gray-50 border-b border-gray-200 no-print">
+        <div className="max-w-7xl mx-auto px-6 py-2">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => { if (!isEditMode) handleToggleEditMode(); }}
+              className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${isEditMode
+                ? 'bg-slate-700 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+            >
+              Edit Mode
+            </button>
+            <button
+              onClick={() => { if (isEditMode) handleToggleEditMode(); }}
+              className={`px-3 py-1 text-sm font-medium rounded-lg transition-colors ${!isEditMode
+                ? 'bg-slate-700 text-white'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+            >
+              Preview Mode
+            </button>
+            <button
+              onClick={handleToggleAllSections}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+              title={openSectionIds.length > 0 ? "Collapse All Sections" : "Expand All Sections"}
+            >
+              {openSectionIds.length > 0 ? (
+                <React.Fragment>
+                  <ChevronUp size={16} />
+                  Collapse All
+                </React.Fragment>
+              ) : (
+                <React.Fragment>
+                  <ChevronDown size={16} />
+                  Expand All
+                </React.Fragment>
+              )}
+            </button>
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Download size={16} />
+              Export
+            </button>
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleLoad}
+              className="hidden"
+              id="toolbarLoadFile"
+            />
+            <button
+              onClick={() => document.getElementById('toolbarLoadFile').click()}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <Upload size={16} />
+              Load
+            </button>
+            <div className="ml-auto text-sm text-gray-500">
               {openSectionIds.length}/{sections.length} open
             </div>
           </div>
         </div>
-      </nav>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-16 py-12">
@@ -3212,6 +3326,7 @@ const LectureTemplateSystem = ({ initialData }) => {
             onToggle={() => handleToggleSection(section.id)}
             htmlModes={htmlModes}
             toggleHtmlMode={toggleHtmlMode}
+            onAddBlockBelow={handleAddBlockBelow}
           />
         ))}
       </div>

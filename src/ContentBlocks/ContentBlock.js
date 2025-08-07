@@ -1,25 +1,20 @@
 // ContentBlock Component with Dropdown Menu - FIXED VERSION
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import {
     ChevronDown,
-    Plus,
-    Video,
-    Image,
-    Music,
-    CreditCard,
-    List,
     AlertCircle,
     CheckCircle,
     AlertTriangle,
-    FileText,
     Edit3,
     X,
     GripVertical,
     ChevronUp
 } from 'lucide-react';
+import AddBelowDropdown from './Section';
 
 // Import your modular components
 import RichTextEditor from '../RichTextEditor';
+import HeadlineEditor from '../HeadlineEditor';
 
 // Import utility functions and components (adjust paths based on your structure)
 import {
@@ -68,22 +63,8 @@ const ContentBlock = ({
     sectionId // NEW: Current section ID
 }) => {
     // Now your existing state variables should work:
-    const [isDragging, setIsDragging] = React.useState(false);
-    const [showDropdown, setShowDropdown] = React.useState(false);
-    const blockRef = React.useRef(null);
-    const dropdownRef = React.useRef(null);
-
-    // Close dropdown when clicking outside
-    React.useEffect(() => {
-        const handleClickOutside = (event) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-                setShowDropdown(false);
-            }
-        };
-
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, []);
+    const [isDragging, setIsDragging] = useState(false);
+    const blockRef = useRef(null);
 
     // FIXED: Only handle drag events from the drag handle, not the entire block
     const handleDragStart = (e) => {
@@ -125,22 +106,9 @@ const ContentBlock = ({
             // Fallback - you can implement a default behavior here
             alert(`Add ${contentType} block functionality needs to be implemented in the parent component`);
         }
-        setShowDropdown(false);
+        // dropdown closes within AddBelowDropdown component
     };
 
-    // Content type options for dropdown
-    const contentOptions = [
-        { type: 'text', icon: FileText, label: 'Text Block', color: 'text-gray-600' },
-        { type: 'heading', icon: FileText, label: 'Heading', color: 'text-blue-600' },
-        { type: 'list', icon: List, label: 'List', color: 'text-green-600' },
-        { type: 'info-box', icon: AlertCircle, label: 'Info Box', color: 'text-blue-500' },
-        { type: 'exercise-box', icon: AlertCircle, label: 'Exercise Box', color: 'text-emerald-500' },
-        { type: 'warning-box', icon: AlertCircle, label: 'Warning Box', color: 'text-amber-500' },
-        { type: 'video', icon: Video, label: 'Video', color: 'text-red-500' },
-        { type: 'image', icon: Image, label: 'Image/Gallery', color: 'text-purple-500' },
-        { type: 'audio', icon: Music, label: 'Audio', color: 'text-indigo-500' },
-        { type: 'cards', icon: CreditCard, label: 'Cards', color: 'text-yellow-600' },
-    ];
 
     const renderContent = () => {
         switch (block.type) {
@@ -158,7 +126,35 @@ const ContentBlock = ({
                         />
                     </div>
                 ) : (
-                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
+                    <div className="rich-editor-content" dangerouslySetInnerHTML={{ __html: block.content }} />
+                );
+
+            case 'headline':
+                return isEditMode ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <HeadlineEditor
+                            content={block.content}
+                            onChange={(content) => onBlockUpdate({ ...block, content })}
+                        />
+                    </div>
+                ) : (
+                    <div className="headline-preview" dangerouslySetInnerHTML={{ __html: block.content }} />
+                );
+
+            case 'html':
+                return isEditMode ? (
+                    <div onClick={(e) => e.stopPropagation()}>
+                        <textarea
+                            value={block.content}
+                            onChange={(e) => onBlockUpdate({ ...block, content: e.target.value })}
+                            className="w-full min-h-[150px] p-3 border border-gray-300 rounded-lg font-mono text-sm"
+                        />
+                    </div>
+                ) : (
+                    <div
+                        className="html-block-preview rich-editor-content"
+                        dangerouslySetInnerHTML={{ __html: block.content }}
+                    />
                 );
 
             case 'info-box':
@@ -198,7 +194,7 @@ const ContentBlock = ({
                                         />
                                     </div>
                                 ) : (
-                                    <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: block.content }} />
+                                    <div className="rich-editor-content" dangerouslySetInnerHTML={{ __html: block.content }} />
                                 )}
                             </div>
                         </div>
@@ -413,54 +409,8 @@ const ContentBlock = ({
 
             {/* NEW: Add Content Below Button & Dropdown */}
             {isEditMode && (
-                <div className="relative flex justify-center my-2">
-                    <div className="relative" ref={dropdownRef}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                setShowDropdown(!showDropdown);
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors shadow-md"
-                            title="Add content below this block"
-                        >
-                            <Plus size={16} />
-                            <span className="text-sm font-medium">Add Below</span>
-                            <ChevronDown size={14} className={`transition-transform ${showDropdown ? 'rotate-180' : ''}`} />
-                        </button>
-
-                        {/* Dropdown Menu */}
-                        {showDropdown && (
-                            <div className="absolute top-full left-1/2 transform -translate-x-1/2 mt-2 w-56 bg-white rounded-lg shadow-xl border border-gray-200 z-50 py-2">
-                                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
-                                    Text Content
-                                </div>
-                                {contentOptions.slice(0, 6).map((option) => (
-                                    <button
-                                        key={option.type}
-                                        onClick={() => handleAddContent(option.type)}
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <option.icon size={16} className={option.color} />
-                                        <span>{option.label}</span>
-                                    </button>
-                                ))}
-
-                                <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100 border-t border-gray-100 mt-1">
-                                    Media Content
-                                </div>
-                                {contentOptions.slice(6).map((option) => (
-                                    <button
-                                        key={option.type}
-                                        onClick={() => handleAddContent(option.type)}
-                                        className="w-full flex items-center gap-3 px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-                                    >
-                                        <option.icon size={16} className={option.color} />
-                                        <span>{option.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </div>
+                <div className="my-2 flex justify-center">
+                    <AddBelowDropdown onAddContent={handleAddContent} />
                 </div>
             )}
         </div>

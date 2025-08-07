@@ -1,11 +1,13 @@
 import React from 'react';
 import TextRenderer from './renderers/TextRenderer';
+import HeadlineRenderer from './renderers/HeadlineRenderer';
 import BoxRenderer from './renderers/BoxRenderer';
 import VideoRenderer from './renderers/VideoRenderer';
 import ImageRenderer from './renderers/ImageRenderer';
 import GalleryRenderer from './renderers/GalleryRenderer';
 import AudioRenderer from './renderers/AudioRenderer';
 import CardRenderer from './renderers/CardRenderer';
+import HtmlRenderer from './renderers/HtmlRenderer';
 
 const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlMode }) => {
     const commonProps = {
@@ -21,6 +23,12 @@ const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtml
         case 'heading':
         case 'list':
             return <TextRenderer {...commonProps} />;
+
+        case 'headline':
+            return <HeadlineRenderer {...commonProps} />;
+
+        case 'html':
+            return <HtmlRenderer {...commonProps} />;
 
         case 'info-box':
         case 'exercise-box':

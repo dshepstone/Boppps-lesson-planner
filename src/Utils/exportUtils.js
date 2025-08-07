@@ -4,13 +4,93 @@
 import { generateImageCitation, generateVideoCitation, generateAudioCitation } from './contentUtils';
 import { CARD_STYLES, IMAGE_SIZES, GALLERY_COLUMNS } from './constants';
 
+// Helper to embed external images as data URIs for portable exports
+export const fetchImageAsDataUrl = async (src) => {
+    try {
+        const response = await fetch(src);
+        const blob = await response.blob();
+        return await new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onloadend = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    } catch (error) {
+        console.error('Failed to embed image:', src, error);
+        return src;
+    }
+};
+
+// Replace any <img> tags in an HTML string with embedded data URIs
+const embedHtmlImages = async (html) => {
+    if (!html) return html;
+    const container = document.createElement('div');
+    container.innerHTML = html;
+    const images = Array.from(container.querySelectorAll('img'));
+    await Promise.all(
+        images.map(async (img) => {
+            const src = img.getAttribute('src');
+            if (src && !src.startsWith('data:')) {
+                img.setAttribute('src', await fetchImageAsDataUrl(src));
+            }
+        })
+    );
+    return container.innerHTML;
+};
+
+export const embedImagesInSections = async (sections) => {
+    return Promise.all(
+        sections.map(async (section) => ({
+            ...section,
+            blocks: await Promise.all(
+                section.blocks.map(async (block) => {
+                    let updatedBlock = { ...block };
+
+                    if (updatedBlock.content) {
+                        updatedBlock.content = await embedHtmlImages(updatedBlock.content);
+                    }
+
+                    if (updatedBlock.type === 'image' && updatedBlock.src && !updatedBlock.src.startsWith('data:')) {
+                        updatedBlock.src = await fetchImageAsDataUrl(updatedBlock.src);
+                    }
+
+                    if (Array.isArray(updatedBlock.items)) {
+                        updatedBlock.items = await Promise.all(
+                            updatedBlock.items.map(async (item) => {
+                                let updatedItem = { ...item };
+
+                                if (updatedItem.src && !updatedItem.src.startsWith('data:')) {
+                                    updatedItem.src = await fetchImageAsDataUrl(updatedItem.src);
+                                }
+
+                                if (updatedItem.content) {
+                                    updatedItem.content = await embedHtmlImages(updatedItem.content);
+                                }
+
+                                return updatedItem;
+                            })
+                        );
+                    }
+
+                    return updatedBlock;
+                })
+            ),
+        }))
+    );
+};
+
 // Content Block to HTML Conversion
 export const blockToHtml = (block) => {
     switch (block.type) {
         case 'text':
         case 'heading':
         case 'list':
-            return `<div class="my-4 prose max-w-none">${block.content}</div>`;
+            return `<div class="my-4 rich-editor-content">${block.content}</div>`;
+        case 'headline':
+            return `<div class="headline-preview">${block.content}</div>`;
+
+        case 'html':
+            return `<div class="html-block-preview rich-editor-content">${block.content}</div>`;
 
         case 'info-box':
         case 'exercise-box':
@@ -23,7 +103,7 @@ export const blockToHtml = (block) => {
 
             return `
         <div class="my-6 p-4 rounded-lg ${boxConfig.bg} ${boxConfig.border}">
-          <div class="prose max-w-none">${block.content}</div>
+          <div class="rich-editor-content">${block.content}</div>
         </div>
       `;
 
@@ -140,14 +220,24 @@ export const getVideoEmbedHtml = (src, platform) => {
 };
 
 // Generate complete HTML export
-export const generateCompleteHtml = (sections, headerData, displayDate, logoHtml) => {
+export const generateCompleteHtml = async (sections, headerData, displayDate, logoHtml) => {
+    let embeddedLogoHtml = logoHtml;
+    if (logoHtml) {
+        const match = logoHtml.match(/src="([^"]+)"/);
+        if (match && !match[1].startsWith('data:')) {
+            const dataUrl = await fetchImageAsDataUrl(match[1]);
+            embeddedLogoHtml = logoHtml.replace(match[1], dataUrl);
+        }
+    }
+
+    const processedSections = await embedImagesInSections(sections);
     const headerHtml = `
     <header class="bg-white border-b border-gray-200">
       <div class="max-w-7xl mx-auto px-6 py-12">
         <div class="flex items-start justify-between space-x-6">
           <div class="flex flex-col items-center md:items-start space-y-3">
             <p class="text-lg text-gray-600">${displayDate}</p>
-            ${logoHtml ? `<div class="flex items-center space-x-3">${logoHtml}<div><h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1></div></div>` : `<h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1>`}
+            ${embeddedLogoHtml ? `<div class="flex items-center space-x-3">${embeddedLogoHtml}<div><h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1></div></div>` : `<h1 class="text-3xl font-bold text-gray-900">${headerData.courseTopic}</h1>`}
             <p class="text-sm text-gray-500">Instructor: ${headerData.instructorName} | ${headerData.instructorEmail}</p>
           </div>
         </div>
@@ -155,7 +245,7 @@ export const generateCompleteHtml = (sections, headerData, displayDate, logoHtml
     </header>
   `;
 
-    const sectionsHtml = sections.map(section => {
+    const sectionsHtml = processedSections.map(section => {
         const sectionBlocksHtml = section.blocks.map(block => blockToHtml(block)).join('');
         return `
       <section class="mb-12">

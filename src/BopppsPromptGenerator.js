@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
@@ -50,9 +49,8 @@ const EnhancedRichTextEditor = ({ content, onChange, placeholder, className = ""
       StarterKit.configure({
         // Disable extensions we're adding separately to avoid duplicates
         link: false,          // We're adding Link separately
-        // Note: StarterKit doesn't include Underline by default, so no need to disable it
       }),
-      Underline,
+      // Underline extension is included with StarterKit; avoid registering twice
       TextAlign.configure({
         types: ['heading', 'paragraph'],
       }),

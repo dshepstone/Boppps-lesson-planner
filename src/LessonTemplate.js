@@ -323,7 +323,7 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
         className={`${colorConfig.bg} ${colorConfig.hover} text-white px-8 py-6 cursor-pointer flex justify-between items-center relative overflow-hidden transition-colors no-print`}
         onClick={onToggle}
       >
-        <h2 className="text-xl font-semibold">
+        <h2 className="text-xl font-semibold text-white">
           {headerLabel}
         </h2>
 

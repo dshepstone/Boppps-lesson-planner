@@ -875,27 +875,67 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     setIsLoadingVideoInfo(true);
 
     try {
+      const { isValid } = validateVideoUrl(url, platform);
+      if (!isValid) {
+        alert('⚠️ Invalid URL for the selected platform. Please check the URL and platform selection.');
+        return;
+      }
+
       const videoId = extractVideoId(url, platform);
 
       if (platform === 'youtube' && videoId) {
-        setFormData(prev => ({
-          ...prev,
-          videoTitle: '',
-          videoAuthor: '',
-          videoSource: 'YouTube',
-          videoUrl: url
-        }));
-        alert('🔍 YouTube URL detected! Please manually enter the video title and author.');
+        try {
+          const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+          if (!response.ok) throw new Error('YouTube oEmbed request failed');
+          const data = await response.json();
+
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: data.title || '',
+            videoAuthor: data.author_name || '',
+            videoSource: 'YouTube',
+            videoUrl: url
+          }));
+
+          alert('✅ YouTube video details fetched successfully.');
+        } catch (err) {
+          console.error('YouTube info fetch error:', err);
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: '',
+            videoAuthor: '',
+            videoSource: 'YouTube',
+            videoUrl: url
+          }));
+          alert('⚠️ Could not fetch YouTube details. Please enter them manually.');
+        }
 
       } else if (platform === 'vimeo' && videoId) {
-        setFormData(prev => ({
-          ...prev,
-          videoTitle: '',
-          videoAuthor: '',
-          videoSource: 'Vimeo',
-          videoUrl: url
-        }));
-        alert('🔍 Vimeo URL detected! Please manually enter the video title and author.');
+        try {
+          const response = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`);
+          if (!response.ok) throw new Error('Vimeo oEmbed request failed');
+          const data = await response.json();
+
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: data.title || '',
+            videoAuthor: data.author_name || '',
+            videoSource: 'Vimeo',
+            videoUrl: url
+          }));
+
+          alert('✅ Vimeo video details fetched successfully.');
+        } catch (err) {
+          console.error('Vimeo info fetch error:', err);
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: '',
+            videoAuthor: '',
+            videoSource: 'Vimeo',
+            videoUrl: url
+          }));
+          alert('⚠️ Could not fetch Vimeo details. Please enter them manually.');
+        }
 
       } else if (platform === 'panopto' && url.includes('panopto.com')) {
         try {

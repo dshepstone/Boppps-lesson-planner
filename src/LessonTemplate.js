@@ -266,7 +266,7 @@ const studentFriendlyTitles = {
 };
 
 // Section Component
-const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow }) => {
+const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow, handleWorksheetJsonImport }) => {
   const [draggedBlock, setDraggedBlock] = useState(null);
 
   const handleBlockDragStart = (e, blockId) => {
@@ -3512,6 +3512,7 @@ window.printWorksheet = printWorksheet;
             htmlModes={htmlModes}
             toggleHtmlMode={toggleHtmlMode}
             onAddBlockBelow={handleAddBlockBelow}
+            handleWorksheetJsonImport={handleWorksheetJsonImport}
           />
         ))}
       </div>

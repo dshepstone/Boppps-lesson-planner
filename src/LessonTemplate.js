@@ -1,10 +1,9 @@
 /*
-  LessonTemplate.js - Integrated with Modular Component System and WorksheetModule
-  Preserves all original UI and functionality while adding comprehensive worksheet support
+  LessonTemplate.js - Enhanced with Worksheet Print Functionality
+  Preserves all original UI and functionality while adding worksheet printing
 */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp } from 'lucide-react';
-import { LogoProvider, useLogo } from './LogoContext';
+import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp, Printer } from 'lucide-react';import { LogoProvider, useLogo } from './LogoContext';
 import SchoolLogoSettings from './SchoolLogoSettings';
 
 // Import CSS styles
@@ -86,6 +85,17 @@ import {
   validateFormData
 } from './Utils/validationUtils';
 
+// ✅ Add this after your imports, before any other components
+const ContentBlockWrapper = ({ block, children, ...props }) => {
+  if (block.type === 'worksheet') {
+    return (
+      <div id={`worksheet-${block.id}`} className="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
+        {children}
+      </div>
+    );
+  }
+  return children;
+};
 
 const generateVideoEmbed = (platform, videoId, embedCode, aspectRatio) => {
   const aspectClass = {
@@ -122,6 +132,177 @@ const generateAPACitation = (title, author, date, source, url) => {
   if (source) citation += `${source}. `;
   if (url) citation += `<a href="${url}" target="_blank" class="text-blue-600 hover:text-blue-800">${url}</a>`;
   return citation || '';
+};
+
+
+// ✅ FIXED: Complete printWorksheet function
+const printWorksheet = (worksheetId) => {
+  const sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) {
+    console.error('Worksheet element not found:', worksheetId);
+    return;
+  }
+  
+  // Clone the worksheet content with proper deep cloning
+  const printNode = sourceNode.cloneNode(true);
+  
+  // Remove print buttons and non-print elements
+  const printButtons = printNode.querySelectorAll('.worksheet-print-button, .no-print, button');
+  printButtons.forEach(btn => btn.remove());
+  
+  // Get worksheet title
+  const worksheetTitle = printNode.querySelector('h2')?.textContent || 'Worksheet';
+  
+  // Professional print styles optimized for 8.5x11 paper
+  const printStyles = `
+    <style>
+      @page { 
+        size: 8.5in 11in; 
+        margin: 0.75in; 
+      }
+      
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      
+      body { 
+        font-family: 'Times New Roman', Times, serif; 
+        font-size: 12pt; 
+        line-height: 1.5; 
+        color: #000;
+        background: white;
+      }
+      
+      .worksheet-export {
+        background: white !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+      }
+      
+      .worksheet-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid #000;
+        background: white !important;
+        border-radius: 0 !important;
+      }
+      
+      .worksheet-header h2 { 
+        font-size: 18pt; 
+        font-weight: bold; 
+        text-align: center;
+        margin-bottom: 0.5rem;
+        color: #000;
+      }
+      
+      .student-info {
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        border: 1px solid #000;
+        background: white !important;
+        border-radius: 0 !important;
+      }
+      
+      /* CRITICAL: Preserve input fields for students */
+      input[type="text"], 
+      input[type="date"], 
+      textarea,
+      select {
+        border: 1px solid #000 !important;
+        border-radius: 0 !important;
+        padding: 4px 6px !important;
+        background-color: white !important;
+        color: #000 !important;
+        font-size: 11pt !important;
+        font-family: 'Times New Roman', Times, serif !important;
+        min-height: 24px !important;
+        width: 100% !important;
+        display: block !important;
+      }
+      
+      input[type="radio"], input[type="checkbox"] {
+        width: auto !important;
+        display: inline !important;
+        margin-right: 0.5rem !important;
+      }
+      
+      .worksheet-question {
+        margin-bottom: 1rem;
+        page-break-inside: avoid;
+      }
+      
+      /* Grid and flex utilities */
+      .grid { display: grid !important; }
+      .grid-cols-1 { grid-template-columns: 1fr !important; }
+      .grid-cols-2 { grid-template-columns: 1fr 1fr !important; }
+      .gap-4 { gap: 1rem !important; }
+      .flex { display: flex !important; }
+      .items-center { align-items: center !important; }
+      .items-start { align-items: flex-start !important; }
+      .justify-between { justify-content: space-between !important; }
+      .w-full { width: 100% !important; }
+      .flex-1 { flex: 1 !important; }
+      .font-bold { font-weight: bold !important; }
+      .font-medium { font-weight: 500 !important; }
+      
+      /* Hide print controls */
+      .no-print, 
+      .worksheet-print-button,
+      button,
+      .edit-controls {
+        display: none !important;
+      }
+      
+      /* Spacing */
+      .mb-6 { margin-bottom: 1.5rem !important; }
+      .mb-3 { margin-bottom: 0.75rem !important; }
+      .mb-2 { margin-bottom: 0.5rem !important; }
+      .p-4 { padding: 1rem !important; }
+      .p-2 { padding: 0.5rem !important; }
+    </style>
+  `;
+  
+  // Create the complete HTML document
+  const newWindow = window.open('', '_blank');
+  if (!newWindow) {
+    alert('Pop-up blocked. Please allow pop-ups for this site and try again.');
+    return;
+  }
+  
+  newWindow.document.write(`
+    <!DOCTYPE html>
+    <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>${worksheetTitle} - Print</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        ${printStyles}
+      </head>
+      <body>
+        ${printNode.outerHTML}
+        <script>
+          // Auto-print when page loads
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+            }, 500);
+          };
+          
+          // Prevent form submission in print view
+          document.addEventListener('submit', function(e) {
+            e.preventDefault();
+          });
+        </script>
+      </body>
+    </html>
+  `);
+  newWindow.document.close();
 };
 
 // Auto-save functionality
@@ -243,12 +424,11 @@ const studentFriendlyTitles = {
   'participatory-learning': "Let's Dive In",
   'post-assessment': "Your Turn: Show What You Know",
   'summary': 'Key Takeaways',
-  // you can add Resources & Materials or Overview if you like:
   'overview': 'Session Overview',
   'resources': 'Resources & Materials',
 };
 
-// Section Component
+// ✅ ENHANCED: Section Component with Worksheet Print Support
 const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow }) => {
   const [draggedBlock, setDraggedBlock] = useState(null);
 
@@ -300,7 +480,6 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
 
     if (targetIndex < 0 || targetIndex >= newBlocks.length) return;
 
-    // Swap elements
     [newBlocks[index], newBlocks[targetIndex]] = [newBlocks[targetIndex], newBlocks[index]];
 
     onUpdate({ ...section, blocks: newBlocks });
@@ -363,29 +542,62 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
       </div>
 
       <div className={`accordion-content-wrapper ${isOpen ? 'is-open' : ''}`}>
-        {/* This inner div is essential for the grid animation to work correctly */}
         <div>
           <div className="p-8">
             {section.blocks.map((block, index) => (
-              <ContentBlock
-                key={block.id}
-                block={block}
-                isEditMode={isEditMode}
-                onEdit={() => handleBlockEdit(block.id)}
-                onDelete={() => handleBlockDelete(block.id)}
-                onBlockUpdate={handleBlockUpdate}
-                onDragStart={(e) => handleBlockDragStart(e, block.id)}
-                onDrop={(e) => handleBlockDrop(e, index)}
-                onDragOver={(e) => e.preventDefault()}
-                onMoveUp={() => handleBlockMove(block.id, 'up')}
-                onMoveDown={() => handleBlockMove(block.id, 'down')}
-                isFirst={index === 0}
-                isLast={index === section.blocks.length - 1}
-                htmlModes={htmlModes}
-                toggleHtmlMode={toggleHtmlMode}
-                onAddBlockBelow={onAddBlockBelow}
-                sectionId={section.id}
-              />
+              <div key={block.id} className="relative">
+                <ContentBlockWrapper block={block}>
+                <ContentBlock
+                  block={block}
+                  isEditMode={isEditMode}
+                  onEdit={() => handleBlockEdit(block.id)}
+                  onDelete={() => handleBlockDelete(block.id)}
+                  onBlockUpdate={handleBlockUpdate}
+                  onDragStart={(e) => handleBlockDragStart(e, block.id)}
+                  onDrop={(e) => handleBlockDrop(e, index)}
+                  onDragOver={(e) => e.preventDefault()}
+                  onMoveUp={() => handleBlockMove(block.id, 'up')}
+                  onMoveDown={() => handleBlockMove(block.id, 'down')}
+                  isFirst={index === 0}
+                  isLast={index === section.blocks.length - 1}
+                  htmlModes={htmlModes}
+                  toggleHtmlMode={toggleHtmlMode}
+                  onAddBlockBelow={onAddBlockBelow}
+                  sectionId={section.id}
+                />
+                </ContentBlockWrapper>
+
+                {/* ✅ FIXED: Worksheet Print Button - Only shows for worksheet blocks */}
+                  {block.type === 'worksheet' && block.questions && block.questions.length > 0 && (
+                    <div className="mt-4 text-center no-print">
+                      <button
+                        onClick={() => printWorksheet(`worksheet-${block.id}`)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto text-sm font-medium"
+                      >
+                        <Printer size={16} />
+                        Print Worksheet Only
+                      </button>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Creates a clean printable version for students
+                      </p>
+                    </div>
+                  )}
+                {/* ✅ NEW: Worksheet Print Button */}
+                {block.type === 'worksheet' && block.questions && block.questions.length > 0 && (
+                  <div className="mt-4 text-center no-print">
+                    <button
+                      onClick={() => printWorksheet(`worksheet-${block.id}`)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2 mx-auto text-sm font-medium"
+                    >
+                      <Printer size={16} />
+                      Print Worksheet Only
+                    </button>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Creates a clean printable version for students
+                    </p>
+                  </div>
+                )}
+              </div>
             ))}
 
             {isEditMode && (
@@ -466,7 +678,6 @@ const ControlPanel = ({
             ))}
           </select>
 
-          {/* Instructor Info */}
           <div className="bg-gray-50 p-4 rounded-xl mb-6 border border-gray-200">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Instructor Name</label>
             <input
@@ -493,7 +704,7 @@ const ControlPanel = ({
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-slate-500 focus:border-transparent"
             />
           </div>
-          {/* FOOTER SETTINGS SECTION - Add this block to your ControlPanel component */}
+          
           <div className="bg-blue-50 p-4 rounded-xl mb-6 border border-blue-200">
             <h4 className="text-sm font-semibold text-gray-700 mb-3">🦶 Footer Information</h4>
 
@@ -547,7 +758,6 @@ const ControlPanel = ({
 
         <div className="h-px bg-gray-200 my-4"></div>
 
-        {/* NEW: Logo Settings Button */}
         <button
           onClick={onOpenLogoSettings}
           className="w-full p-3 bg-slate-600 hover:bg-slate-700 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors shadow-sm"
@@ -758,6 +968,11 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   }, []);
   
+// ✅ Make printWorksheet available globally for exported HTML
+useEffect(() => {
+  window.printWorksheet = printWorksheet;
+}, []);
+
   useEffect(() => {
     if (isOpen) {
       if (contentType === 'worksheet') {
@@ -1012,7 +1227,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           .filter(card => card.title || card.content)
           .map(card => ({
             title: card.title || '',
-            content: card.content || '' // RichTextEditor provides HTML directly
+            content: card.content || ''
           }));
         onSave({ ...processedData, type: 'cards' });
         break;
@@ -1525,11 +1740,10 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [autoSaveData, setAutoSaveData] = useState(null);
   const [defaultSection, setDefaultSection] = useState('overview');
   const [activeSectionId, setActiveSectionId] = useState('');
-  const [openSectionIds, setOpenSectionIds] = useState(['overview']); // Can hold multiple IDs
+  const [openSectionIds, setOpenSectionIds] = useState(['overview']);
 
   const [showLogoSettings, setShowLogoSettings] = useState(false);
 
-  // NEW: Use the logo context
   const { logo, getLogoHtml, hasLogo } = useLogo();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -1553,7 +1767,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     }
   };
 
-  // Header data
   const [headerData, setHeaderData] = useState({
     courseTopic: 'Course Topic - Week 1',
     instructorName: 'Instructor: Your Name',
@@ -1573,7 +1786,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       const time = timestamp - start;
       const percent = Math.min(time / duration, 1);
 
-      // easeInOutCubic timing function for a soft start and end
       const easing = percent < 0.5 ? 4 * percent * percent * percent : 1 - Math.pow(-2 * percent + 2, 3) / 2;
 
       window.scrollTo(0, startingY + diff * easing);
@@ -1585,7 +1797,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     window.requestAnimationFrame(step);
   }
 
-  // Initial sections data - UPDATED to handle initialData prop
   const [sections, setSections] = useState(() => {
     if (initialData && initialData.sections) {
       return initialData.sections;
@@ -1735,7 +1946,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     ];
   });
 
-  // Auto-save functionality
   const autoSaveKey = `lecture-template-autosave-${week}-${date}`;
   const { lastSaved, hasUnsavedChanges, loadAutoSavedData, clearAutoSavedData } = useAutoSave({
     headerData,
@@ -1744,7 +1954,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     sections
   }, autoSaveKey);
 
-  // ADDED: Load initial data if provided
   useEffect(() => {
     if (initialData) {
       if (initialData.headerData) {
@@ -1762,7 +1971,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     }
   }, [initialData]);
 
-  // Check for auto-saved data on mount - UPDATED to not run if initialData is present
   useEffect(() => {
     const savedData = loadAutoSavedData();
     if (savedData && savedData.timestamp && !initialData) {
@@ -1771,7 +1979,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     }
   }, [loadAutoSavedData, initialData]);
 
-  // Update tempTitle when editing starts
   useEffect(() => {
     if (isEditingTitle) {
       setTempTitle(headerData.courseTopic.replace(/Week \d+/, `Week ${week}`));
@@ -1833,9 +2040,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   };
 
   const handleToggleEditMode = () => {
-    // If switching from edit mode to preview mode, force save any pending content
     if (isEditMode) {
-      // Give any pending editor updates a moment to complete
       setTimeout(() => {
         setIsEditMode(false);
         showSaveIndicator('👁️ Preview mode enabled');
@@ -1882,7 +2087,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     }
   };
 
-  // Add a new block directly below the specified block within a section
   const handleAddBlockBelow = (blockId, contentType = 'text', sectionId) => {
     if (contentType === 'text' || contentType === 'headline' || contentType === 'html') {
       const newBlock = {
@@ -1960,7 +2164,6 @@ const LectureTemplateSystem = ({ initialData }) => {
 
     const logoHtml = await buildLogoHtml();
 
-    // Create clean header for PDF
     const headerHtml = `
       <header class="header-section">
         <div class="header-content">
@@ -1986,7 +2189,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       </header>
     `;
 
-    // Generate clean sections HTML with minimal spacing
     const processedSections = await embedImagesInSections(sections);
     const sectionsHtml = processedSections.map((section, index) => {
       const label = studentFriendlyTitles[section.id] || section.title;
@@ -2017,7 +2219,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       `;
     }).join('');
 
-    // Footer HTML
     const footerHtml = `
       <footer class="footer-section">
         <div class="footer-content">
@@ -2028,7 +2229,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       </footer>
     `;
 
-    // Compact PDF-specific styles
     const pdfStyles = `
       <style>
         @page {
@@ -2050,7 +2250,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           font-size: 10pt;
         }
         
-        /* Header Styles - Compact */
         .header-section {
           background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
           border-bottom: 3px solid #3b82f6;
@@ -2123,7 +2322,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           line-height: 1.1;
         }
         
-        /* Section Styles - Compact */
         .section-container {
           margin-bottom: 0.5rem;
           break-inside: avoid;
@@ -2150,7 +2348,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           background: white;
         }
         
-        /* Typography - Compact */
         h1 { 
           font-size: 18pt;
           font-weight: 700;
@@ -2211,7 +2408,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           color: #4b5563;
         }
         
-        /* Card Layouts - Compact */
         .grid {
           display: grid;
           gap: 0.5rem;
@@ -2223,7 +2419,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
         .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
         
-        /* Info Boxes - Compact */
         .p-4.rounded-lg {
           padding: 0.5rem;
           border-radius: 6px;
@@ -2252,7 +2447,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           border-left-color: #64748b;
         }
         
-        /* Images - Compact */
         img {
           max-width: 100%;
           height: auto;
@@ -2262,7 +2456,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         }
         
-        /* Video Placeholder - Compact */
         iframe {
           border: 2px solid #e5e7eb;
           background: #f3f4f6;
@@ -2271,7 +2464,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           margin: 0.5rem 0;
         }
 
-        /* Worksheet Styles for Print */
         .worksheet-container {
           break-inside: avoid;
           margin: 1rem 0;
@@ -2308,7 +2500,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           margin-right: 8px !important;
         }
         
-        /* Footer - Compact */
         .footer-section {
           background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
           color: white;
@@ -2338,7 +2529,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           color: #94a3b8;
         }
         
-        /* Remove excessive spacing */
         .my-6 { 
           margin: 0.5rem 0; 
         }
@@ -2355,7 +2545,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           padding: 0.5rem 0; 
         }
         
-        /* Hide interactive elements */
         .no-print, 
         button, 
         .cursor-pointer,
@@ -2363,7 +2552,6 @@ const LectureTemplateSystem = ({ initialData }) => {
           display: none !important;
         }
         
-        /* Utility classes */
         .break-inside-avoid { break-inside: avoid; }
         .break-before-page { break-before: page; }
         .text-center { text-align: center; }
@@ -2372,7 +2560,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       </style>
     `;
 
-    // Complete HTML document
     const fullHtml = `
       <!DOCTYPE html>
       <html lang="en">
@@ -2390,7 +2577,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         ${footerHtml}
         
         <script>
-          // Auto-print when page loads
           window.onload = function() {
             setTimeout(function() {
               window.print();
@@ -2401,7 +2587,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       </html>
     `;
 
-    // Open in new window for printing
     const printWindow = window.open('', '_blank');
     printWindow.document.write(fullHtml);
     printWindow.document.close();
@@ -2409,11 +2594,7 @@ const LectureTemplateSystem = ({ initialData }) => {
     showSaveIndicator('📄 PDF export ready');
   };
 
-  /**
-   * ✅✅✅ START OF THE FIX ✅✅✅
-   * The code inside this 'getBlockHtml' function has been updated to generate
-   * interactive form fields for the worksheet export.
-   */
+  // ✅ ENHANCED: getBlockHtml function with worksheet support and worksheet print button integration
   const getBlockHtml = (block) => {
     switch (block.type) {
       case 'text':
@@ -2515,253 +2696,281 @@ const LectureTemplateSystem = ({ initialData }) => {
         `;
 
       case 'worksheet':
-        const totalPoints = block.questions
-          ?.filter(q => q.type !== 'instructions')
-          .reduce((sum, q) => sum + (q.points || 0), 0) || 0;
-        
-        const questionsHtml = block.questions?.map((question, index) => {
-          // Find the question number by filtering out instructions
-          const questionNumber = (block.questions.slice(0, index + 1).filter(q => q.type !== 'instructions')).length;
+  if (!block.questions || !Array.isArray(block.questions)) {
+    return `<div class="my-6 p-6 bg-gray-50 border border-gray-200 rounded-lg text-gray-600">No questions added to this worksheet yet.</div>`;
+  }
 
-          switch (question.type) {
-            case 'instructions':
-              return `
-                <div class="worksheet-instructions mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 class="font-semibold text-blue-900 mb-2">${question.title || 'Instructions'}</h3>
-                  <div class="text-blue-800 whitespace-pre-wrap">${question.content || ''}</div>
-                </div>
-              `;
-            
-            case 'mcq':
-            case 'multiple_choice':
-              const optionsHtml = (question.options || []).map((option, optionIndex) => 
-                `<div class="mb-2">
-                   <label class="flex items-center gap-3 cursor-pointer">
-                     <input type="radio" name="q-${question.id || index}" value="${optionIndex}" class="print-checkbox">
-                     <span>${String.fromCharCode(65 + optionIndex)}. ${option}</span>
-                   </label>
-                 </div>`
-              ).join('');
-              
-              return `
-                <div class="worksheet-question mb-6">
-                  <div class="flex items-start gap-3">
-                    <span class="font-bold">${questionNumber}.</span>
-                    <div class="flex-1">
-                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
-                      <div class="ml-4">${optionsHtml}</div>
-                    </div>
-                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
-                  </div>
-                </div>
-              `;
-            
-            case 'true-false':
-              return `
-                <div class="worksheet-question mb-6">
-                  <div class="flex items-start gap-3">
-                    <span class="font-bold">${questionNumber}.</span>
-                    <div class="flex-1">
-                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
-                      <div class="ml-4 flex gap-6">
-                        <label class="flex items-center gap-2 cursor-pointer">
-                          <input type="radio" name="q-${question.id || index}" value="true" class="print-checkbox">
-                          <span>True</span>
-                        </label>
-                        <label class="flex items-center gap-2 cursor-pointer">
-                          <input type="radio" name="q-${question.id || index}" value="false" class="print-checkbox">
-                          <span>False</span>
-                        </label>
-                      </div>
-                    </div>
-                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
-                  </div>
-                </div>
-              `;
-            
-            case 'short-answer':
-              return `
-                <div class="worksheet-question mb-6">
-                  <div class="flex items-start gap-3">
-                    <span class="font-bold">${questionNumber}.</span>
-                    <div class="flex-1">
-                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
-                      <div class="ml-4">
-                        <input type="text" placeholder="Your answer..." class="w-full p-2 border border-gray-300 rounded-md">
-                      </div>
-                    </div>
-                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
-                  </div>
-                </div>
-              `;
-            
-            case 'long-answer':
-              return `
-                <div class="worksheet-question mb-6">
-                  <div class="flex items-start gap-3">
-                    <span class="font-bold">${questionNumber}.</span>
-                    <div class="flex-1">
-                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
-                      <div class="ml-4">
-                         <textarea rows="5" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Your response..."></textarea>
-                      </div>
-                    </div>
-                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
-                  </div>
-                </div>
-              `;
-            
-            case 'fill-blank':
-              const questionText = question.content || question.question || '';
-              const parts = questionText.split(/_{3,}/g); // Split by 3 or more underscores
-              const filledQuestion = parts.map((part, partIndex) => {
-                if (partIndex < parts.length - 1) {
-                  return `${part}<input type="text" class="inline-block border-b-2 border-gray-400 mx-1 px-1 w-32" />`;
-                }
-                return part;
-              }).join('');
-              
-              return `
-                <div class="worksheet-question mb-6">
-                  <div class="flex items-start gap-3">
-                    <span class="font-bold">${questionNumber}.</span>
-                    <div class="flex-1">
-                      <p class="font-medium mb-3">${filledQuestion}</p>
-                    </div>
-                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
-                  </div>
-                </div>
-              `;
-            
-            case 'scale_rating':
-              const scaleMin = question.scaleMin || 1;
-              const scaleMax = question.scaleMax || 5;
-              const scaleLabels = question.scaleLabels || [];
-              
-              const scaleHtml = Array.from({ length: scaleMax - scaleMin + 1 }, (_, i) => {
-                const value = scaleMin + i;
-                const label = scaleLabels[i];
-                return `
-                  <label class="flex flex-col items-center gap-1 mx-2 cursor-pointer">
-                    <input type="radio" name="q-${question.id || index}" value="${value}" class="print-checkbox">
-                    <span class="text-sm font-medium">${value}</span>
-                    ${label ? `<span class="text-xs text-gray-600 text-center">${label}</span>` : ''}
-                  </label>
-                `;
-              }).join('');
-              
-              return `
-                <div class="worksheet-question mb-6">
-                  <div class="flex items-start gap-3">
-                    <span class="font-bold">${questionNumber}.</span>
-                    <div class="flex-1">
-                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
-                      <div class="ml-4 flex items-center gap-2 flex-wrap">
-                        ${scaleHtml}
-                      </div>
-                    </div>
-                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
-                  </div>
-                </div>
-              `;
-            
-            default:
-              return '';
-          }
-        }).join('') || '';
-        
+  const totalPoints = block.questions.reduce((sum, q) => sum + (parseInt(q.points) || 0), 0);
+  let questionNumber = 0;
+
+  // ✅ CRITICAL FIX: Generate HTML with ACTUAL input fields that persist
+  const questionsHtml = block.questions.map((question) => {
+    if (question.type === 'instructions') {
+      return `<div class="worksheet-instruction p-4 mb-4 bg-blue-50 border-l-4 border-blue-400"><div class="rich-editor-content">${question.content || question.instruction || ''}</div></div>`;
+    }
+
+    questionNumber++;
+
+    switch (question.type) {
+      case 'short-answer':
         return `
-          <div class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
-            <div class="worksheet-header mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h2 class="text-xl font-bold text-gray-900 mb-2">${block.title}</h2>
-              ${block.description ? `<p class="text-gray-700 mb-2">${block.description}</p>` : ''}
-              <div class="flex items-center justify-between text-sm text-gray-600">
-                <span>Total Points: ${totalPoints}</span>
-                <span>Questions: ${block.questions?.filter(q => q.type !== 'instructions').length || 0}</span>
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${question.question || question.title || ''}</p>
+                <input type="text" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Type your answer here..." />
               </div>
-            </div>
-            
-            <div class="student-info mb-6 p-4 border border-gray-300 rounded-lg bg-white">
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Student Name:</label>
-                  <input type="text" class="w-full p-2 border border-gray-300 rounded-md" />
-                </div>
-                <div>
-                  <label class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
-                  <input type="date" class="w-full p-2 border border-gray-300 rounded-md" />
-                </div>
-              </div>
-            </div>
-            
-            <div class="worksheet-questions">
-              ${questionsHtml}
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
             </div>
           </div>
         `;
+
+      case 'long-answer':
+        return `
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${question.question || question.title || ''}</p>
+                <textarea rows="4" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Write your detailed answer here..."></textarea>
+              </div>
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
+            </div>
+          </div>
+        `;
+
+      case 'multiple-choice':
+        const choicesHtml = (question.choices || []).map((choice, index) => {
+          const letter = String.fromCharCode(65 + index);
+          return `
+            <div class="flex items-start gap-2 mb-2">
+              <input type="radio" name="question-${questionNumber}" id="q${questionNumber}${letter}" class="mt-1" />
+              <label for="q${questionNumber}${letter}" class="flex-1">${letter}. ${choice}</label>
+            </div>
+          `;
+        }).join('');
+
+        return `
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${question.question || question.title || ''}</p>
+                <div class="ml-4">
+                  ${choicesHtml}
+                </div>
+              </div>
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
+            </div>
+          </div>
+        `;
+
+      case 'true-false':
+        return `
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${question.question || question.title || ''}</p>
+                <div class="ml-4 flex gap-6">
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="question-${questionNumber}" id="q${questionNumber}T" />
+                    <label for="q${questionNumber}T">True</label>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <input type="radio" name="question-${questionNumber}" id="q${questionNumber}F" />
+                    <label for="q${questionNumber}F">False</label>
+                  </div>
+                </div>
+              </div>
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
+            </div>
+          </div>
+        `;
+
+      case 'fill-blank':
+        const parts = (question.question || question.title || '').split(/_{3,}/g);
+        const filledQuestion = parts.map((part, partIndex) => {
+          if (partIndex < parts.length - 1) {
+            return `${part}<input type="text" class="inline-block border-b-2 border-gray-400 mx-1 px-1 w-32" />`;
+          }
+          return part;
+        }).join('');
+        
+        return `
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${filledQuestion}</p>
+              </div>
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
+            </div>
+          </div>
+        `;
+
+      case 'matching':
+        const leftItems = question.leftItems || [];
+        const rightItems = question.rightItems || [];
+        const matchingHtml = leftItems.map((item, index) => `
+          <div class="flex items-center gap-4 mb-2">
+            <span class="w-4 text-center font-bold">${index + 1}.</span>
+            <span class="flex-1">${item}</span>
+            <select class="border border-gray-300 rounded px-2 py-1">
+              <option value="">Choose...</option>
+              ${rightItems.map((rightItem, rightIndex) => 
+                `<option value="${String.fromCharCode(65 + rightIndex)}">${String.fromCharCode(65 + rightIndex)}. ${rightItem}</option>`
+              ).join('')}
+            </select>
+          </div>
+        `).join('');
+
+        return `
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${question.question || question.title || ''}</p>
+                <div class="ml-4">
+                  ${matchingHtml}
+                </div>
+              </div>
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
+            </div>
+          </div>
+        `;
+
+      case 'scale':
+        const scaleMin = parseInt(question.scaleMin) || 1;
+        const scaleMax = parseInt(question.scaleMax) || 5;
+        const scaleLabels = question.scaleLabels || {};
+        
+        const scaleHtml = Array.from({length: scaleMax - scaleMin + 1}, (_, i) => {
+          const value = scaleMin + i;
+          const label = scaleLabels[value] || '';
+          return `
+            <label class="flex flex-col items-center gap-1 cursor-pointer">
+              <input type="radio" name="question-${questionNumber}" value="${value}" class="scale-radio" />
+              <span class="text-sm font-medium">${value}</span>
+              ${label ? `<span class="text-xs text-gray-600 text-center">${label}</span>` : ''}
+            </label>
+          `;
+        }).join('');
+        
+        return `
+          <div class="worksheet-question mb-6">
+            <div class="flex items-start gap-3">
+              <span class="font-bold">${questionNumber}.</span>
+              <div class="flex-1">
+                <p class="font-medium mb-3">${question.title || question.question || ''}</p>
+                <div class="ml-4 flex items-center gap-2 flex-wrap">
+                  ${scaleHtml}
+                </div>
+              </div>
+              <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
+            </div>
+          </div>
+        `;
+      
+      default:
+        return '';
+    }
+  }).join('') || '';
+  
+  return `
+    <div id="worksheet-${block.id}" class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
+      <div class="worksheet-header mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg flex justify-between items-start">
+        <div>
+          <h2 class="text-xl font-bold text-gray-900 mb-2">${block.title}</h2>
+          ${block.description ? `<p class="text-gray-700 mb-2">${block.description}</p>` : ''}
+          <div class="flex items-center gap-4 text-sm text-gray-600">
+            <span>Total Points: ${totalPoints}</span>
+            <span>Questions: ${block.questions?.filter(q => q.type !== 'instructions').length || 0}</span>
+          </div>
+        </div>
+        <button
+          onclick="printWorksheet('worksheet-${block.id}')"
+          class="worksheet-print-button no-print px-4 py-2 bg-slate-600 text-white text-sm font-semibold rounded-lg hover:bg-slate-700 transition-colors"
+        >
+          Print Worksheet
+        </button>
+      </div>
+      
+      <div class="student-info mb-6 p-4 border border-gray-300 rounded-lg bg-white">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Student Name:</label>
+            <input type="text" class="w-full p-2 border border-gray-300 rounded-md" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
+            <input type="date" class="w-full p-2 border border-gray-300 rounded-md" />
+          </div>
+        </div>
+      </div>
+      
+      <div class="worksheet-questions">
+        ${questionsHtml}
+      </div>
+    </div>
+  `;
 
       default:
         return `<div>Unsupported content type: ${block.type}</div>`;
     }
   };
-  /**
-   * ✅✅✅ END OF THE FIX ✅✅✅
-   */
 
+  // ✅ ENHANCED: handleExportHTML with fixed accordion functionality and worksheet print support
   const handleExportHTML = async () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
     const logoHtml = await buildLogoHtml();
-
     const processedSections = await embedImagesInSections(sections);
-
+    
     const headerHtml = `
-  <header class="bg-white border-b border-gray-200">
-    <div class="max-w-7xl mx-auto px-6 py-12">
-      <div class="flex items-start justify-between space-x-6">
-
-        <div class="flex flex-col items-center md:items-start space-y-3">
-          <p class="text-lg text-gray-600">${displayDate}</p>
-          ${logoHtml ? `<div class="logo">${logoHtml}</div>` : ''}
+      <header class="bg-white border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-6 py-12">
+          <div class="flex items-start justify-between space-x-6">
+            <div class="flex flex-col items-center md:items-start space-y-3">
+              <p class="text-lg text-gray-600">${displayDate}</p>
+              ${logoHtml ? `<div class="logo">${logoHtml}</div>` : ''}
+            </div>
+            <div class="flex-1 text-center md:text-left">
+              <h1 class="text-4xl font-bold text-gray-900">
+                ${headerData.courseTopic.replace(/Week \d+/, `Week ${week}`)}
+              </h1>
+            </div>
+            <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 items-center flex-shrink-0">
+              <span class="font-medium text-gray-800 text-right">Instructor:</span>
+              <span class="text-gray-600">${headerData.instructorName}</span>
+              <span class="font-medium text-gray-800 text-right">Email:</span>
+              <span class="text-gray-600">${headerData.instructorEmail}</span>
+            </div>
+          </div>
         </div>
-
-        <div class="flex-1 text-center md:text-left">
-          <h1 class="text-4xl font-bold text-gray-900">
-            ${headerData.courseTopic.replace(/Week \d+/, `Week ${week}`)}
-          </h1>
-        </div>
-
-        <div class="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 items-center flex-shrink-0">
-          <span class="font-medium text-gray-800 text-right">Instructor:</span>
-          <span class="text-gray-600">${headerData.instructorName}</span>
-          <span class="font-medium text-gray-800 text-right">Email:</span>
-          <span class="text-gray-600">${headerData.instructorEmail}</span>
-        </div>
-
-      </div>
-    </div>
-  </header>
-`;
+      </header>
+    `;
 
     const navHtml = `
-<nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
-  <div class="max-w-8xl mx-auto px-6">
-    <ul class="flex justify-center gap-1 py-2 flex-wrap">
-      ${sections.map(section => {
-      const label = studentFriendlyTitles[section.id] || section.title;
-      return `
-        <li>
-          <a
-            href="#${section.id}"
-            class="px-4 py-2 rounded-t-lg transition-all font-medium text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100"
-          >
-            ${label}
-          </a>
-        </li>`;
-    }).join('')}
-    </ul>
-  </div>
-</nav>
-`;
+      <nav class="bg-white border-b border-gray-200 sticky top-0 z-40 no-print">
+        <div class="max-w-8xl mx-auto px-6">
+          <ul class="flex justify-center gap-1 py-2 flex-wrap">
+            ${sections.map(section => {
+              const label = studentFriendlyTitles[section.id] || section.title;
+              return `
+                <li>
+                  <a
+                    href="#${section.id}"
+                    class="px-4 py-2 rounded-t-lg transition-all font-medium text-sm text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+                  >
+                    ${label}
+                  </a>
+                </li>`;
+            }).join('')}
+          </ul>
+        </div>
+      </nav>
+    `;
 
     const sectionColors = {
       'overview': { bg: 'bg-slate-600' }, 'bridge-in': { bg: 'bg-red-500' },
@@ -2770,30 +2979,32 @@ const LectureTemplateSystem = ({ initialData }) => {
       'summary': { bg: 'bg-indigo-500' }, 'resources': { bg: 'bg-gray-600' }
     };
 
+    // ✅ FIXED: Use consistent CSS classes and respect current open state
     const sectionsHtml = processedSections.map(section => {
       const label = studentFriendlyTitles[section.id] || section.title;
       const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
       const blocksHtml = section.blocks.map(getBlockHtml).join('');
+      const isCurrentlyOpen = openSectionIds.includes(section.id);
 
       return `
-  <div id="${section.id}" class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
-    <div class="${colorConfig.bg} text-white px-8 py-6 cursor-pointer flex justify-between items-center section-header">
-      <h2 class="text-xl font-semibold">${label}</h2>
-      <div class="toggle-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
-             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <polyline points="9 18 15 12 9 6" />
-        </svg>
-      </div>
-    </div>
-    <div class="content-container closed">
-      <div>
-        <div class="p-8">
-          ${blocksHtml}
-        </div>
-      </div>
-    </div>
-  </div>`;
+        <div id="${section.id}" class="bg-white rounded-2xl shadow-sm border border-gray-200 mb-8 overflow-hidden">
+          <div class="${colorConfig.bg} text-white px-8 py-6 cursor-pointer flex justify-between items-center section-header" data-section="${section.id}">
+            <h2 class="text-xl font-semibold">${label}</h2>
+            <div class="toggle-icon ${isCurrentlyOpen ? 'rotated' : ''}">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none"
+                  viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <polyline points="9 18 15 12 9 6" />
+              </svg>
+            </div>
+          </div>
+          <div class="accordion-content-wrapper ${isCurrentlyOpen ? 'is-open' : ''}">
+            <div>
+              <div class="p-8">
+                ${blocksHtml}
+              </div>
+            </div>
+          </div>
+        </div>`;
     }).join('');
 
     const footerHtml = `
@@ -2806,107 +3017,181 @@ const LectureTemplateSystem = ({ initialData }) => {
       </footer>
     `;
 
-    const accordionJs = `
-      <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const smoothScrollTo = (elementY, duration = 1000) => {
-                const startingY = window.pageYOffset;
-                const diff = elementY - startingY;
-                let start;
+// ✅ FIXED: Complete JavaScript with proper syntax
+// ✅ FIXED: Complete JavaScript with proper syntax and working print function
+// ✅ FIXED: Complete JavaScript with proper syntax and working print function
+const accordionJs = `
+  <script>
+    // Global state for accordion functionality
+    let openSections = ${JSON.stringify(openSectionIds)};
+    
+    // WORKSHEET PRINT FUNCTION for exported HTML
+    function printWorksheet(worksheetId) {
+      const sourceNode = document.getElementById(worksheetId);
+      if (!sourceNode) {
+        console.error('Worksheet element not found:', worksheetId);
+        alert('Worksheet not found. Please try again.');
+        return;
+      }
+      
+      // Clone the worksheet content with deep cloning
+      const printNode = sourceNode.cloneNode(true);
+      
+      // Remove print buttons and non-print elements from cloned content
+      const printButtons = printNode.querySelectorAll('.worksheet-print-button, .no-print, button');
+      printButtons.forEach(btn => btn.remove());
+      
+      // Get worksheet title
+      const worksheetTitle = printNode.querySelector('h2')?.textContent || 'Worksheet';
+      
+      // Professional print styles - fixed escaping
+      const printStyles = '' +
+        '<style>' +
+        '@page { size: 8.5in 11in; margin: 0.75in; }' +
+        '* { margin: 0; padding: 0; box-sizing: border-box; }' +
+        'body { font-family: "Times New Roman", Times, serif; font-size: 12pt; line-height: 1.5; color: #000; background: white; }' +
+        '.worksheet-export { background: white !important; border: none !important; box-shadow: none !important; border-radius: 0 !important; padding: 0 !important; margin: 0 !important; }' +
+        '.worksheet-header { break-inside: avoid; margin-bottom: 1rem; padding-bottom: 1rem; border-bottom: 2px solid #000; background: white !important; border-radius: 0 !important; }' +
+        '.worksheet-header h2 { font-size: 18pt; font-weight: bold; text-align: center; margin-bottom: 0.5rem; color: #000; }' +
+        '.student-info { margin-bottom: 1rem; padding: 0.75rem; border: 1px solid #000; background: white !important; border-radius: 0 !important; }' +
+        'input[type="text"], input[type="date"], textarea, select { border: 1px solid #000 !important; border-radius: 0 !important; padding: 4px 6px !important; background-color: white !important; color: #000 !important; font-size: 11pt !important; font-family: "Times New Roman", Times, serif !important; min-height: 24px !important; width: 100% !important; display: block !important; }' +
+        'input[type="radio"], input[type="checkbox"] { width: auto !important; display: inline !important; margin-right: 0.5rem !important; }' +
+        '.worksheet-question { margin-bottom: 1rem; page-break-inside: avoid; }' +
+        '.grid { display: grid !important; } .grid-cols-1 { grid-template-columns: 1fr !important; } .grid-cols-2 { grid-template-columns: 1fr 1fr !important; } .gap-4 { gap: 1rem !important; }' +
+        '.flex { display: flex !important; } .items-center { align-items: center !important; } .items-start { align-items: flex-start !important; } .justify-between { justify-content: space-between !important; }' +
+        '.w-full { width: 100% !important; } .flex-1 { flex: 1 !important; } .font-bold { font-weight: bold !important; } .font-medium { font-weight: 500 !important; }' +
+        '.no-print, .worksheet-print-button, button, .edit-controls { display: none !important; }' +
+        '.mb-6 { margin-bottom: 1.5rem !important; } .mb-3 { margin-bottom: 0.75rem !important; } .mb-2 { margin-bottom: 0.5rem !important; } .p-4 { padding: 1rem !important; } .p-2 { padding: 0.5rem !important; }' +
+        '</style>';
+      
+      // Create print window
+      const newWindow = window.open('', '_blank');
+      if (!newWindow) {
+        alert('Pop-up blocked. Please allow pop-ups for this site and try again.');
+        return;
+      }
+      
+      // Create the complete HTML document - fixed escaping
+      const printHtml = '' +
+        '<!DOCTYPE html>' +
+        '<html lang="en">' +
+        '<head>' +
+        '<meta charset="UTF-8">' +
+        '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+        '<title>' + worksheetTitle + ' - Print</title>' +
+        '<script src="https://cdn.tailwindcss.com"></script>' +
+        printStyles +
+        '</head>' +
+        '<body>' +
+        printNode.outerHTML +
+        '<script>' +
+        'window.onload = function() { setTimeout(function() { window.print(); }, 500); };' +
+        'document.addEventListener("submit", function(e) { e.preventDefault(); });' +
+        '</script>' +
+        '</body>' +
+        '</html>';
+      
+      newWindow.document.write(printHtml);
+      newWindow.document.close();
+    }
+      window.printWorksheet = printWorksheet;
 
-                const step = (timestamp) => {
-                    if (!start) start = timestamp;
-                    const time = timestamp - start;
-                    const percent = Math.min(time / duration, 1);
-                    const easing = percent < 0.5 ? 4 * percent * percent * percent : 1 - Math.pow(-2 * percent + 2, 3) / 2;
-                    window.scrollTo(0, startingY + diff * easing);
-                    if (time < duration) {
-                        window.requestAnimationFrame(step);
-                    }
-                }
-                window.requestAnimationFrame(step);
-            }
-
-            document.querySelectorAll('.section-header').forEach(header => {
-                header.addEventListener('click', function() {
-                    const content = this.nextElementSibling;
-                    const icon = this.querySelector('.toggle-icon');
-                    
-                    if (content && icon) {
-                        const isClosed = content.classList.contains('closed');
-                        
-                        if (isClosed) {
-                            content.classList.remove('closed');
-                            icon.classList.add('rotated');
-                        } else {
-                            content.classList.add('closed');
-                            icon.classList.remove('rotated');
-                        }
-                    }
-                });
-            });
-            
-            document.querySelectorAll('nav a').forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    const targetId = this.getAttribute('href').substring(1);
-                    const targetSection = document.getElementById(targetId);
-                    
-                    if (targetSection) {
-                        const content = targetSection.querySelector('.content-container');
-                        const icon = targetSection.querySelector('.toggle-icon');
-                        
-                        if (content && content.classList.contains('closed')) {
-                            content.classList.remove('closed');
-                            if (icon) icon.classList.add('rotated');
-                        }
-                        
-                        const elementPosition = targetSection.getBoundingClientRect().top + window.pageYOffset;
-                        const offsetPosition = elementPosition - 60; 
-                        smoothScrollTo(offsetPosition, 1000);
-                    }
-                });
-            });
+    
+    // Accordion toggle function
+    function toggleAccordion(sectionId) {
+      const accordionWrapper = document.querySelector('[data-section="' + sectionId + '"] + .accordion-content-wrapper');
+      const icon = document.querySelector('[data-section="' + sectionId + '"] .toggle-icon');
+      
+      if (accordionWrapper && icon) {
+        if (accordionWrapper.classList.contains('is-open')) {
+          accordionWrapper.classList.remove('is-open');
+          icon.classList.remove('rotated');
+          openSections = openSections.filter(function(id) { return id !== sectionId; });
+        } else {
+          accordionWrapper.classList.add('is-open');
+          icon.classList.add('rotated');
+          if (openSections.indexOf(sectionId) === -1) {
+            openSections.push(sectionId);
+          }
+        }
+      }
+    }
+    
+    // Add click event listeners for accordion headers
+    document.addEventListener('DOMContentLoaded', function() {
+      console.log('Lesson template loaded with ' + openSections.length + ' open sections');
+      
+      // Add click listeners to section headers
+      var headers = document.querySelectorAll('.section-header');
+      for (var i = 0; i < headers.length; i++) {
+        headers[i].addEventListener('click', function() {
+          var sectionId = this.getAttribute('data-section');
+          if (sectionId) {
+            toggleAccordion(sectionId);
+          }
         });
-      </script>`;
+      }
+    });
+  </script>
+`;
 
+    // ✅ FIXED: Updated CSS to match the main component's accordion animation
     const fixedStyles = `
       <style>
-        .logo {
-            max-height: 80px;
-            margin-bottom: 15px;
-            display: block;
-            margin-left: auto;
-            margin-right: auto;
-        }
-        .toggle-icon { 
-            transition: transform 0.3s ease-in-out; 
-        }
-        .toggle-icon.rotated { 
-            transform: rotate(90deg); 
-        }
-        body { 
-            background-color: #f9fafb;
-        }
-
-        .content-container {
-            display: grid;
-            grid-template-rows: 1fr;
-            transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
-            opacity: 1;
-            overflow: hidden;
-        }
-        .content-container.closed {
-            grid-template-rows: 0fr;
-            opacity: 0;
-        }
-        .content-container > div {
-            min-height: 0;
-            overflow: hidden;
+        .logo { 
+          max-height: 80px; 
+          margin-bottom: 15px; 
+          display: block; 
+          margin-left: auto; 
+          margin-right: auto; 
         }
         
-        .content-container * {
-            will-change: auto;
+        .toggle-icon { 
+          transition: transform 0.3s ease-in-out; 
+        }
+        
+        .toggle-icon.rotated { 
+          transform: rotate(90deg); 
+        }
+        
+        body { 
+          background-color: #f9fafb; 
+        }
+        
+        .no-print { 
+          display: block; 
+        }
+        
+        @media print { 
+          .no-print { 
+            display: none !important; 
+          } 
+        }
+        
+        /* ✅ FIXED: Use the same accordion animation as the main component */
+        .accordion-content-wrapper {
+          display: grid;
+          grid-template-rows: 0fr;
+          transition: 
+            grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1),
+            opacity 0.5s ease-out;
+          opacity: 0;
+          overflow: hidden;
+        }
+
+        .accordion-content-wrapper.is-open {
+          grid-template-rows: 1fr;
+          opacity: 1;
+        }
+
+        .accordion-content-wrapper > div {
+          min-height: 0;
+          overflow: hidden;
+        }
+        
+        /* Ensure smooth performance */
+        .accordion-content-wrapper * { 
+          will-change: auto; 
         }
       </style>`;
 
@@ -2935,8 +3220,8 @@ const LectureTemplateSystem = ({ initialData }) => {
     const blob = new Blob([fullHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
     a.download = `Week${week}_Lecture_${date.replace(/[^a-zA-Z0-9]/g, '_')}_Student.html`;
+    a.href = url;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -3022,8 +3307,6 @@ const LectureTemplateSystem = ({ initialData }) => {
   const handleModalSave = (blockData) => {
     const { sectionId, isEditing, insertAfterBlockId, ...content } = blockData;
 
-    console.log('handleModalSave received:', blockData);
-
     if (isEditing) {
       setSections(prevSections =>
         prevSections.map(section => {
@@ -3069,8 +3352,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         type: content.type || modalContentType,
       };
 
-      console.log('Creating new block:', newBlock);
-
       const targetSectionId = sectionId || defaultSection || 'overview';
       setSections(prevSections =>
         prevSections.map(section => {
@@ -3097,17 +3378,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     setModalContentType(blockToEdit.type);
 
     let initialDataForModal = { ...blockToEdit, sectionId, isEditing: true };
-
-    const htmlToText = (html) => {
-      if (!html) return '';
-      const temp = document.createElement('div');
-      temp.innerHTML = html;
-      const listItems = temp.querySelectorAll('li');
-      listItems.forEach(li => {
-        li.innerHTML = '• ' + li.innerHTML;
-      });
-      return temp.textContent || temp.innerText || '';
-    };
 
     if (blockToEdit.type === 'cards') {
       const cleanedItems = (blockToEdit.items || []).map(item => ({
@@ -3432,9 +3702,9 @@ const LectureTemplateSystem = ({ initialData }) => {
 
       <footer className="bg-gray-900 text-white py-8 mt-16 print-break-before">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="mb-2 font-medium">${headerData.footerCourseInfo}</p>
-          <p className="mb-2 text-gray-300">${headerData.footerInstitution}</p>
-          <p className="text-gray-400 text-sm">${headerData.footerCopyright}</p>
+          <p className="mb-2 font-medium">{headerData.footerCourseInfo}</p>
+          <p className="mb-2 text-gray-300">{headerData.footerInstitution}</p>
+          <p className="text-gray-400 text-sm">{headerData.footerCopyright}</p>
         </div>
       </footer>
 

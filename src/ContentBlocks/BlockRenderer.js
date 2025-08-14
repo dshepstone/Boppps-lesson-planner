@@ -8,6 +8,7 @@ import GalleryRenderer from './renderers/GalleryRenderer';
 import AudioRenderer from './renderers/AudioRenderer';
 import CardRenderer from './renderers/CardRenderer';
 import HtmlRenderer from './renderers/HtmlRenderer';
+import WorksheetRenderer from './renderers/WorksheetRenderer';
 
 const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtmlMode }) => {
     const commonProps = {
@@ -49,6 +50,9 @@ const BlockRenderer = ({ block, isEditMode, onBlockUpdate, htmlModes, toggleHtml
 
         case 'cards':
             return <CardRenderer {...commonProps} />;
+
+        case 'worksheet':
+            return <WorksheetRenderer {...commonProps} />;
 
         default:
             return (

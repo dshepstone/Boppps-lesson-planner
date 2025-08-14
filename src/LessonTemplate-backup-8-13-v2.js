@@ -7,6 +7,12 @@ import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCa
 import { LogoProvider, useLogo } from './LogoContext';
 import SchoolLogoSettings from './SchoolLogoSettings';
 
+// Import CSS styles
+import './LessonTemplate.css';
+
+// Import CSS styles
+import './LessonTemplate.css';
+
 // Enhanced Tiptap imports - including all new extensions
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -850,7 +856,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           videoSource: 'YouTube',
           videoUrl: url
         }));
-        alert('📝 YouTube URL detected! Please manually enter the video title and author.');
+        alert('🔍 YouTube URL detected! Please manually enter the video title and author.');
 
       } else if (platform === 'vimeo' && videoId) {
         setFormData(prev => ({
@@ -860,7 +866,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           videoSource: 'Vimeo',
           videoUrl: url
         }));
-        alert('📝 Vimeo URL detected! Please manually enter the video title and author.');
+        alert('🔍 Vimeo URL detected! Please manually enter the video title and author.');
 
       } else if (platform === 'panopto' && url.includes('panopto.com')) {
         try {
@@ -876,15 +882,15 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           }));
           alert('✅ Panopto URL processed! Please update the title and author.');
         } catch (error) {
-          alert('❌ Invalid Panopto URL format.');
+          alert('⚠️ Invalid Panopto URL format.');
         }
       } else {
-        alert('❌ Invalid URL for the selected platform. Please check the URL and platform selection.');
+        alert('⚠️ Invalid URL for the selected platform. Please check the URL and platform selection.');
       }
 
     } catch (error) {
       console.error('Error processing video info:', error);
-      alert('❌ Error processing URL. Please enter information manually.');
+      alert('⚠️ Error processing URL. Please enter information manually.');
     } finally {
       setIsLoadingVideoInfo(false);
     }
@@ -908,9 +914,9 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
         // VALIDATION: Check if files/filenames are provided
         if (sourceArray.length === 0 && !formData.isEditing) {
           if (imageSource === 'upload') {
-            alert('❌ Please select at least one image file to upload.');
+            alert('⚠️ Please select at least one image file to upload.');
           } else {
-            alert('❌ Please enter at least one image filename.');
+            alert('⚠️ Please enter at least one image filename.');
           }
           return;
         }
@@ -965,9 +971,9 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
             if (!singleItem && !formData.isEditing) {
               if (imageSource === 'upload') {
-                alert('❌ Please select an image file to upload.');
+                alert('⚠️ Please select an image file to upload.');
               } else {
-                alert('❌ Please enter an image filename.');
+                alert('⚠️ Please enter an image filename.');
               }
               return;
             }
@@ -1008,7 +1014,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
         } catch (error) {
           console.error('Error processing image(s):', error);
-          alert(`❌ Error processing image file(s): ${error.message}`);
+          alert(`⚠️ Error processing image file(s): ${error.message}`);
           return;
         }
         break;
@@ -1040,7 +1046,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
             processedData.src = base64;
           } catch (error) {
             console.error('Error processing audio:', error);
-            alert('❌ Error processing audio file. Please try again.');
+            alert('⚠️ Error processing audio file. Please try again.');
             return;
           }
         }
@@ -2852,7 +2858,7 @@ const LectureTemplateSystem = ({ initialData }) => {
     const file = event.target.files[0];
     if (!file) return;
 
-    showSaveIndicator('📁 Loading content...', 'saving');
+    showSaveIndicator('📂 Loading content...', 'saving');
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -2884,10 +2890,10 @@ const LectureTemplateSystem = ({ initialData }) => {
         }
 
         clearAutoSavedData();
-        showSaveIndicator('📁 Content loaded successfully');
+        showSaveIndicator('📂 Content loaded successfully');
       } catch (error) {
         console.error('Error loading content:', error);
-        showSaveIndicator('❌ Error loading content', 'error');
+        showSaveIndicator('⚠️ Error loading content', 'error');
       }
     };
     reader.readAsText(file);
@@ -3102,7 +3108,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+    <div className="lesson-template-container min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <SaveIndicator {...saveIndicator} />
 
       {/* Auto-save Recovery Modal */}
@@ -3226,7 +3232,6 @@ const LectureTemplateSystem = ({ initialData }) => {
             <ul className="flex justify-center gap-1 flex-wrap">
               {sections.map(section => (
                 <li key={section.id}>
-                  {/* FIX: Added the opening <a> tag here */}
                   <a
                     href={`#${section.id}`}
                     onClick={(e) => handleNavClick(e, section.id)}
@@ -3357,7 +3362,7 @@ const LectureTemplateSystem = ({ initialData }) => {
       {/* Back to Top Button */}
       <button
         onClick={() => smoothScrollTo(0, 1000)}
-        className="fixed bottom-8 right-8 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print opacity-0 invisible hover:opacity-100 hover:visible"
+        className="back-to-top-button fixed bottom-8 right-8 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print opacity-0 invisible hover:opacity-100 hover:visible"
         style={{
           opacity: typeof window !== 'undefined' && window.pageYOffset > 300 ? 1 : 0,
           visibility: typeof window !== 'undefined' && window.pageYOffset > 300 ? 'visible' : 'hidden'
@@ -3365,236 +3370,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       >
         ↑
       </button>
-
-      {/* Print and Animation Styles */}
-      <style jsx="true">{`
-        @media print {
-          .no-print, .no-print * {
-            display: none !important;
-          }
-          
-          body {
-            background: white !important;
-            font-size: 12pt;
-            line-height: 1.4;
-          }
-          
-          .print-break-inside-avoid {
-            break-inside: avoid;
-          }
-          
-          .print-break-before {
-            break-before: page;
-          }
-          
-          h1 { font-size: 24pt; }
-          h2 { font-size: 18pt; }
-          h3 { font-size: 16pt; }
-          h4 { font-size: 14pt; }
-          
-          .bg-gradient-to-br {
-            background: white !important;
-          }
-          
-          .shadow-sm, .shadow-md, .shadow-lg, .shadow-xl {
-            box-shadow: none !important;
-          }
-          
-          .rounded-2xl, .rounded-xl, .rounded-lg {
-            border-radius: 8px !important;
-          }
-          
-          .border-gray-200 {
-            border-color: #d1d5db !important;
-          }
-          
-          /* Ensure proper spacing for printed content */
-          .section {
-            margin-bottom: 2rem;
-          }
-          
-          /* Video placeholders for print */
-          iframe {
-            border: 2px solid #d1d5db;
-            background: #f3f4f6;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-          }
-          
-          iframe::after {
-            content: 'Video content available in digital version';
-            color: #6b7280;
-            font-style: italic;
-          }
-          
-          .print-gallery-cols-2 { grid-template-columns: repeat(2, 1fr) !important; }
-          .print-gallery-cols-3 { grid-template-columns: repeat(3, 1fr) !important; }
-          .print-gallery-cols-4 { grid-template-columns: repeat(4, 1fr) !important; }
-          
-          .group, img {
-             break-inside: avoid;
-          }
-        }
-
-        .accordion-content-wrapper {
-    display: grid;
-    grid-template-rows: 0fr;
-    transition: 
-      grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1),
-      opacity 0.5s ease-out;
-    opacity: 0;
-    overflow: hidden;
-  }
-
-  .accordion-content-wrapper.is-open {
-    grid-template-rows: 1fr;
-    opacity: 1;
-  }
-
-  .accordion-content-wrapper > div {
-    min-height: 0;
-    overflow: hidden;
-  }
-  /* Card content formatting - ensures rich text displays properly */
-.card-content {
-  line-height: 1.6;
-}
-
-.card-content p {
-  margin-bottom: 0.75rem;
-}
-
-.card-content p:last-child {
-  margin-bottom: 0;
-}
-
-.card-content ul, .card-content ol {
-  margin: 0.75rem 0;
-  padding-left: 1.5rem;
-}
-
-.card-content ul {
-  list-style-type: disc;
-}
-
-.card-content ol {
-  list-style-type: decimal;
-}
-
-.card-content li {
-  margin-bottom: 0.25rem;
-  line-height: 1.5;
-}
-
-.card-content strong {
-  font-weight: 600;
-}
-
-.card-content em {
-  font-style: italic;
-}
-
-.card-content h1, .card-content h2, .card-content h3, .card-content h4 {
-  font-weight: 600;
-  margin: 0.75rem 0 0.5rem 0;
-  line-height: 1.3;
-}
-
-.card-content h1 { font-size: 1.25rem; }
-.card-content h2 { font-size: 1.125rem; }
-.card-content h3 { font-size: 1rem; }
-.card-content h4 { font-size: 0.875rem; }
-
-.card-content a {
-  color: #3b82f6;
-  text-decoration: underline;
-}
-
-.card-content a:hover {
-  color: #1d4ed8;
-}
-/* ========================================
-   HTML MODE STYLES - Added for HTML editing functionality
-   ======================================== */
-
-/* HTML Mode Textarea */
-.html-editor-textarea {
-  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace !important;
-  font-size: 13px;
-  line-height: 1.5;
-  tab-size: 2;
-}
-
-/* Rich Text Editor Improvements */
-.rich-editor-content .ProseMirror {
-  outline: none;
-  min-height: 100px;
-  padding: 1rem;
-}
-
-.rich-editor-content .ProseMirror p.is-editor-empty:first-child::before {
-  content: attr(data-placeholder);
-  float: left;
-  color: #9ca3af;
-  pointer-events: none;
-  height: 0;
-  font-style: italic;
-}
-
-/* HTML/Rich Text Toggle Button */
-.mode-toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  font-weight: 500;
-  padding: 6px 12px;
-  border-radius: 6px;
-  transition: all 0.2s;
-  cursor: pointer;
-}
-
-.mode-toggle.html-active {
-  background-color: #fef3c7;
-  color: #d97706;
-  border: 1px solid #fbbf24;
-}
-
-.mode-toggle.rich-active {
-  background-color: #e5e7eb;
-  color: #374151;
-  border: 1px solid #d1d5db;
-}
-
-/* HTML Error Messages */
-.html-error {
-  background-color: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #dc2626;
-  padding: 8px 12px;
-  font-size: 13px;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-/* Quick Insert Buttons in HTML Mode */
-.html-quick-insert {
-  font-size: 11px;
-  padding: 4px 8px;
-  background: white;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.html-quick-insert:hover {
-  background-color: #f3f4f6;
-  border-color: #9ca3af;
-}
-
-      `}</style>
     </div>
   );
 };

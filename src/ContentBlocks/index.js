@@ -9,3 +9,4 @@ export { default as CardRenderer } from './renderers/CardRenderer';
 export { default as GalleryRenderer } from './renderers/GalleryRenderer';
 export { default as BoxRenderer } from './renderers/BoxRenderer';
 export { default as HtmlRenderer } from './renderers/HtmlRenderer';
+export { default as WorksheetRenderer } from './renderers/WorksheetRenderer';

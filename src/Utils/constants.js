@@ -13,7 +13,8 @@ export const CONTENT_TYPES = {
     AUDIO: 'audio',
     CARDS: 'cards',
     GALLERY: 'gallery',
-    TABLE: 'table'
+    TABLE: 'table',
+    WORKSHEET: 'worksheet' 
 };
 
 export const BOPPPS_SECTIONS = [

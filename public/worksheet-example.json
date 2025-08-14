@@ -1,0 +1,31 @@
+{
+  "title": "Example Worksheet",
+  "instructions": "Answer the following questions.",
+  "questions": [
+    {
+      "type": "shortAnswer",
+      "prompt": "What is your name?",
+      "placeholder": "Enter your name",
+      "points": 1
+    },
+    {
+      "type": "longAnswer",
+      "prompt": "Describe your favorite hobby.",
+      "maxLength": 200,
+      "points": 2
+    },
+    {
+      "type": "multipleChoice",
+      "prompt": "Select the correct option",
+      "options": ["Option A", "Option B", "Option C"],
+      "points": 1
+    },
+    {
+      "type": "checkboxes",
+      "prompt": "Select all that apply",
+      "options": ["Choice 1", "Choice 2", "Choice 3"],
+      "points": 2
+    }
+  ],
+  "footerNote": "Thanks for completing the worksheet!"
+}

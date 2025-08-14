@@ -3,7 +3,7 @@
   Preserves all original UI and functionality while adding comprehensive worksheet support
 */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp } from 'lucide-react';
+import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, HelpCircle, ChevronUp } from 'lucide-react';
 import { LogoProvider, useLogo } from './LogoContext';
 import SchoolLogoSettings from './SchoolLogoSettings';
 
@@ -1535,6 +1535,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
   const [saveIndicator, setSaveIndicator] = useState({ show: false, message: '', type: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [modalContentType, setModalContentType] = useState('');
   const [modalInitialData, setModalInitialData] = useState({});
   const [htmlModes, setHtmlModes] = useState({});
@@ -3490,6 +3491,13 @@ window.printWorksheet = printWorksheet;
               <Upload size={16} />
               Load
             </button>
+            <button
+              onClick={() => setIsHelpOpen(true)}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <HelpCircle size={16} />
+              Help
+            </button>
             <div className="ml-auto text-sm text-gray-500">
               {openSectionIds.length}/{sections.length} open
             </div>
@@ -3532,6 +3540,32 @@ window.printWorksheet = printWorksheet;
         onSave={handleModalSave}
         initialData={modalInitialData}
       />
+
+      {isHelpOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-4">Help</h2>
+            <p className="text-sm mb-4">
+              Download an example worksheet JSON file to use with the import feature.
+            </p>
+            <a
+              href="/worksheet-example.json"
+              download
+              className="text-blue-600 underline"
+            >
+              Example worksheet JSON
+            </a>
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLogoSettings && (
         <SchoolLogoSettings onClose={() => setShowLogoSettings(false)} />

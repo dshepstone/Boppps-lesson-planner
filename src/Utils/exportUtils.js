@@ -254,11 +254,11 @@ export const blockToHtml = (block) => {
           .print-checkbox { transform: scale(1.05); }
         </style>
 
-        <div class="my-6 p-4 border border-gray-200 rounded-lg bg-white">
+        <div id="worksheet-${block.id}" class="my-6 p-4 border border-gray-200 rounded-lg bg-white">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold">${block.title || 'Worksheet'}</h3>
-            <button class="no-print inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm"
-                    onclick="window.print()">Print Worksheet</button>
+            <button class="no-print worksheet-print-button inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm"
+                    onclick="printWorksheet('worksheet-${block.id}')">Print Worksheet Only</button>
           </div>
 
           <div class="print-header grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">

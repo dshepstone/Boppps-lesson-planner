@@ -90,18 +90,20 @@ export function WorksheetComponent({ worksheet, isEditMode }) {
     .filter(q => q && q.type !== 'instructions')
     .reduce((sum, q) => sum + (q.points || 0), 0);
 
+  const containerId = `worksheet-${data.id || 'temp'}`;
+
   return (
-    <div className="my-6 p-4 rounded-lg border border-gray-200 bg-white">
+    <div id={containerId} className="my-6 p-4 rounded-lg border border-gray-200 bg-white">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold">{data.title || 'Worksheet'}</h3>
         {!isEditMode && (
           <button
             type="button"
-            onClick={() => window.print()}
-            className="no-print inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm hover:bg-slate-800"
+            onClick={() => (window.printWorksheet ? window.printWorksheet(containerId) : window.print())}
+            className="no-print worksheet-print-button inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm hover:bg-slate-800"
             aria-label="Print worksheet"
           >
-            Print
+            Print Worksheet Only
           </button>
         )}
       </div>

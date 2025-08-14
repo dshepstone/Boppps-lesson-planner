@@ -87,6 +87,23 @@ import {
 } from './Utils/validationUtils';
 
 
+// EXPORT FIX: global worksheet print utility
+const printWorksheet = (worksheetId) => {
+  const sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) { alert('Worksheet not found.'); return; }
+  const clone = sourceNode.cloneNode(true);
+  Array.from(clone.querySelectorAll('.no-print, .worksheet-print-button, button')).forEach(el => el.remove());
+  const titleNode = clone.querySelector('h2, h3, .worksheet-title');
+  const title = titleNode ? titleNode.textContent.trim() : 'Worksheet';
+  const styles = '<style>@page{size:8.5in 11in;margin:0.75in;}body{font-family:Times New Roman, Times, serif;font-size:12pt;line-height:1.5;color:#000;}input,textarea,select{border:1px solid #000;padding:4px 6px;background:#fff;color:#000;font-size:11pt;}</style>';
+  const w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked. Please enable pop-ups and try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' - Print</title>' + styles + '</head><body>' + clone.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\\/script></body></html>');
+  w.document.close();
+};
+if (typeof window !== 'undefined') { window.printWorksheet = printWorksheet; }
+
+
 const generateVideoEmbed = (platform, videoId, embedCode, aspectRatio) => {
   const aspectClass = {
     '16-9': 'pb-[56.25%]',
@@ -385,6 +402,7 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
                 toggleHtmlMode={toggleHtmlMode}
                 onAddBlockBelow={onAddBlockBelow}
                 sectionId={section.id}
+                handleWorksheetJsonImport={handleWorksheetJsonImport}
               />
             ))}
 
@@ -2671,9 +2689,12 @@ const LectureTemplateSystem = ({ initialData }) => {
         }).join('') || '';
         
         return `
-          <div class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
+          <div id="worksheet-${block.id}" class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
             <div class="worksheet-header mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h2 class="text-xl font-bold text-gray-900 mb-2">${block.title}</h2>
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-xl font-bold text-gray-900">${block.title}</h2>
+                <button class="no-print worksheet-print-button inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm" onclick="printWorksheet('worksheet-${block.id}')">Print Worksheet Only</button>
+              </div>
               ${block.description ? `<p class="text-gray-700 mb-2">${block.description}</p>` : ''}
               <div class="flex items-center justify-between text-sm text-gray-600">
                 <span>Total Points: ${totalPoints}</span>
@@ -2932,7 +2953,27 @@ const LectureTemplateSystem = ({ initialData }) => {
       </html>
     `;
 
-    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const __PRINT_WORKSHEET_SCRIPT__ = `<script>
+function printWorksheet(worksheetId) {
+  var sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) { alert('Worksheet not found.'); return; }
+  var clone = sourceNode.cloneNode(true);
+  Array.from(clone.querySelectorAll('.no-print, .worksheet-print-button, button')).forEach(function(el){ el.remove(); });
+  var titleNode = clone.querySelector('h2, h3, .worksheet-title');
+  var title = titleNode ? titleNode.textContent.trim() : 'Worksheet';
+  var styles = '<style>@page{size:8.5in 11in;margin:0.75in;}body{font-family:Times New Roman, Times, serif;font-size:12pt;line-height:1.5;color:#000;}input,textarea,select{border:1px solid #000;padding:4px 6px;background:#fff;color:#000;font-size:11pt;}</style>';
+  var w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked. Please enable pop-ups and try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' - Print</title>' + styles + '</head><body>' + clone.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\\/script></body></html>');
+  w.document.close();
+}
+window.printWorksheet = printWorksheet;
+</script>`;
+
+    let exportedHtml = fullHtml.replace(/<\/body>/i, __PRINT_WORKSHEET_SCRIPT__ + '</body>');
+    exportedHtml = exportedHtml.replace(/^\s*\.\s*$/gm, '');
+
+    const blob = new Blob([exportedHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3017,6 +3058,51 @@ const LectureTemplateSystem = ({ initialData }) => {
     };
     reader.readAsText(file);
     event.target.value = '';
+  };
+
+  // WORKSHEET JSON IMPORT
+  const handleWorksheetJsonImport = (blockId) => async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!Array.isArray(data.questions)) {
+        alert('Invalid JSON: "questions" must be an array');
+        return;
+      }
+
+      const update = {
+        ...(data.title ? { title: data.title } : {}),
+        ...(data.instructions ? { instructions: data.instructions } : {}),
+        ...(data.footerNote ? { footerNote: data.footerNote } : {}),
+        questions: data.questions.map((q, idx) => ({
+          id: q.id || `q_${Date.now()}_${idx}`,
+          type: q.type || 'shortAnswer',
+          prompt: q.prompt || '',
+          placeholder: q.placeholder || '',
+          options: Array.isArray(q.options) ? q.options : [],
+          maxLength: q.maxLength || undefined,
+          points: Number.isFinite(q.points) ? q.points : 0,
+        })),
+      };
+
+      setSections(prev => prev.map(section => ({
+        ...section,
+        blocks: section.blocks.map(b => {
+          if (b.id !== blockId) return b;
+          return { ...b, ...update };
+        })
+      })));
+
+      alert('Worksheet imported successfully.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to parse JSON. Please check the schema.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleModalSave = (blockData) => {

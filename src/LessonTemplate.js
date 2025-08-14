@@ -2907,8 +2907,15 @@ const LectureTemplateSystem = ({ initialData }) => {
         .toggle-icon.rotated { 
             transform: rotate(90deg); 
         }
-        body { 
+        body {
             background-color: #f9fafb;
+        }
+
+        /* EXPORT FIX: ensure accordion titles are white with no underline */
+        .section-header h2,
+        .section-header h2 a {
+            color: #fff;
+            text-decoration: none;
         }
 
         .content-container {

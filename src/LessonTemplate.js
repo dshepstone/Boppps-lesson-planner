@@ -871,7 +871,7 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     });
   };
 
-// Add this helper above or below fetchVideoInfo
+// Normalize incoming video URLs for consistent server requests
 function normalizeVideoUrl(rawUrl, platform) {
   try {
     const u = new URL(rawUrl);

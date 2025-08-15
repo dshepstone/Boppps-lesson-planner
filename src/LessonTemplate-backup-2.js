@@ -876,28 +876,21 @@ function normalizeVideoUrl(rawUrl, platform) {
   try {
     const u = new URL(rawUrl);
     if (platform === 'youtube') {
-      const host = u.hostname.replace(/^m\./, '').replace(/^music\./, '');
-      if (host.includes('youtu.be')) {
+      if (u.hostname.includes('youtu.be')) {
         const id = u.pathname.replace('/', '');
         return `https://www.youtube.com/watch?v=${id}`;
       }
-      if (/youtube\.com$/.test(host) && u.pathname.startsWith('/shorts/')) {
-        const id = u.pathname.split('/')[2] || '';
-        return id ? `https://www.youtube.com/watch?v=${id}` : rawUrl;
-      }
-      if (/youtube\.com$/.test(host) && u.pathname.startsWith('/embed/')) {
-        const id = u.pathname.split('/')[2] || '';
-        return id ? `https://www.youtube.com/watch?v=${id}` : rawUrl;
-      }
-      if (/youtube\.com$/.test(host)) {
+      if (u.hostname.includes('youtube.com')) {
         const v = u.searchParams.get('v');
         if (v) return `https://www.youtube.com/watch?v=${v}`;
       }
     }
     if (platform === 'vimeo') {
+      // Strip query; lookups don't need it
       return `https://vimeo.com${u.pathname}`;
     }
-    return rawUrl; // Panopto: keep as-is
+    // Panopto: keep as-is (org URLs often require full query)
+    return rawUrl;
   } catch {
     return rawUrl;
   }
@@ -908,14 +901,18 @@ const fetchVideoInfo = async (url, platform) => {
   setIsLoadingVideoInfo(true);
   try {
     const normalizedUrl = normalizeVideoUrl(url, platform);
+
+    // Try validation but don't block the server call if it fails
     try {
       const { isValid } = validateVideoUrl(normalizedUrl, platform);
       if (!isValid) console.warn('[VideoMeta] Local validation failed; trying server anyway.');
     } catch {}
+
     const res = await fetch(`/api/video-meta.php?platform=${encodeURIComponent(platform)}&url=${encodeURIComponent(normalizedUrl)}`);
     if (!res.ok) throw new Error(`Video meta request failed (${res.status})`);
     const data = await res.json();
     if (data.error) throw new Error(data.error);
+
     setFormData(prev => ({
       ...prev,
       videoTitle: data.title || '',
@@ -925,6 +922,7 @@ const fetchVideoInfo = async (url, platform) => {
       videoDate: data.date || '',
       videoChannelUrl: data.channelUrl || ''
     }));
+
     alert(`✅ ${data.platform} details fetched successfully.`);
   } catch (err) {
     console.error('Video info fetch error:', err);
@@ -3545,9 +3543,9 @@ window.printWorksheet = printWorksheet;
 
       <footer className="bg-gray-900 text-white py-8 mt-16 print-break-before">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="mb-2 font-medium">{headerData.footerCourseInfo}</p>
-          <p className="mb-2 text-gray-300">{headerData.footerInstitution}</p>
-          <p className="text-gray-400 text-sm">{headerData.footerCopyright}</p>
+          <p className="mb-2 font-medium">${headerData.footerCourseInfo}</p>
+          <p className="mb-2 text-gray-300">${headerData.footerInstitution}</p>
+          <p className="text-gray-400 text-sm">${headerData.footerCopyright}</p>
         </div>
       </footer>
 

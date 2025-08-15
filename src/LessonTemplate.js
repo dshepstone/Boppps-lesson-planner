@@ -871,99 +871,68 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     });
   };
 
-  const fetchVideoInfo = async (url, platform) => {
-    setIsLoadingVideoInfo(true);
-
-    try {
-      const { isValid } = validateVideoUrl(url, platform);
-      if (!isValid) {
-        alert('⚠️ Invalid URL for the selected platform. Please check the URL and platform selection.');
-        return;
+// Add this helper above or below fetchVideoInfo
+function normalizeVideoUrl(rawUrl, platform) {
+  try {
+    const u = new URL(rawUrl);
+    if (platform === 'youtube') {
+      if (u.hostname.includes('youtu.be')) {
+        const id = u.pathname.replace('/', '');
+        return `https://www.youtube.com/watch?v=${id}`;
       }
-
-      const videoId = extractVideoId(url, platform);
-
-      if (platform === 'youtube' && videoId) {
-        try {
-          const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
-          if (!response.ok) throw new Error('YouTube oEmbed request failed');
-          const data = await response.json();
-
-          setFormData(prev => ({
-            ...prev,
-            videoTitle: data.title || '',
-            videoAuthor: data.author_name || '',
-            videoSource: 'YouTube',
-            videoUrl: url
-          }));
-
-          alert('✅ YouTube video details fetched successfully.');
-        } catch (err) {
-          console.error('YouTube info fetch error:', err);
-          setFormData(prev => ({
-            ...prev,
-            videoTitle: '',
-            videoAuthor: '',
-            videoSource: 'YouTube',
-            videoUrl: url
-          }));
-          alert('⚠️ Could not fetch YouTube details. Please enter them manually.');
-        }
-
-      } else if (platform === 'vimeo' && videoId) {
-        try {
-          const response = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`);
-          if (!response.ok) throw new Error('Vimeo oEmbed request failed');
-          const data = await response.json();
-
-          setFormData(prev => ({
-            ...prev,
-            videoTitle: data.title || '',
-            videoAuthor: data.author_name || '',
-            videoSource: 'Vimeo',
-            videoUrl: url
-          }));
-
-          alert('✅ Vimeo video details fetched successfully.');
-        } catch (err) {
-          console.error('Vimeo info fetch error:', err);
-          setFormData(prev => ({
-            ...prev,
-            videoTitle: '',
-            videoAuthor: '',
-            videoSource: 'Vimeo',
-            videoUrl: url
-          }));
-          alert('⚠️ Could not fetch Vimeo details. Please enter them manually.');
-        }
-
-      } else if (platform === 'panopto' && url.includes('panopto.com')) {
-        try {
-          const urlObj = new URL(url);
-          const hostname = urlObj.hostname;
-
-          setFormData(prev => ({
-            ...prev,
-            videoTitle: 'Panopto Session',
-            videoAuthor: '',
-            videoSource: hostname || 'Panopto',
-            videoUrl: url
-          }));
-          alert('✅ Panopto URL processed! Please update the title and author.');
-        } catch (error) {
-          alert('⚠️ Invalid Panopto URL format.');
-        }
-      } else {
-        alert('⚠️ Invalid URL for the selected platform. Please check the URL and platform selection.');
+      if (u.hostname.includes('youtube.com')) {
+        const v = u.searchParams.get('v');
+        if (v) return `https://www.youtube.com/watch?v=${v}`;
       }
-
-    } catch (error) {
-      console.error('Error processing video info:', error);
-      alert('⚠️ Error processing URL. Please enter information manually.');
-    } finally {
-      setIsLoadingVideoInfo(false);
     }
-  };
+    if (platform === 'vimeo') {
+      // Strip query; lookups don't need it
+      return `https://vimeo.com${u.pathname}`;
+    }
+    // Panopto: keep as-is (org URLs often require full query)
+    return rawUrl;
+  } catch {
+    return rawUrl;
+  }
+}
+
+
+const fetchVideoInfo = async (url, platform) => {
+  setIsLoadingVideoInfo(true);
+  try {
+    const normalizedUrl = normalizeVideoUrl(url, platform);
+
+    // Try validation but don't block the server call if it fails
+    try {
+      const { isValid } = validateVideoUrl(normalizedUrl, platform);
+      if (!isValid) console.warn('[VideoMeta] Local validation failed; trying server anyway.');
+    } catch {}
+
+    const res = await fetch(`/api/video-meta.php?platform=${encodeURIComponent(platform)}&url=${encodeURIComponent(normalizedUrl)}`);
+    if (!res.ok) throw new Error(`Video meta request failed (${res.status})`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    setFormData(prev => ({
+      ...prev,
+      videoTitle: data.title || '',
+      videoAuthor: data.author || '',
+      videoSource: data.platform || '',
+      videoUrl: data.videoUrl || normalizedUrl,
+      videoDate: data.date || '',
+      videoChannelUrl: data.channelUrl || ''
+    }));
+
+    alert(`✅ ${data.platform} details fetched successfully.`);
+  } catch (err) {
+    console.error('Video info fetch error:', err);
+    alert('⚠️ Could not fetch video details. Please enter them manually.');
+  } finally {
+    setIsLoadingVideoInfo(false);
+  }
+};
+
+
 
   const handleSubmit = async () => {
     let processedData = { ...formData };

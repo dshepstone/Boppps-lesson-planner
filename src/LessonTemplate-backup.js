@@ -3,7 +3,7 @@
   Preserves all original UI and functionality while adding comprehensive worksheet support
 */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp } from 'lucide-react';
+import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, HelpCircle, ChevronUp } from 'lucide-react';
 import { LogoProvider, useLogo } from './LogoContext';
 import SchoolLogoSettings from './SchoolLogoSettings';
 
@@ -46,11 +46,11 @@ import {
   validateContent
 } from './Utils/contentUtils';
 
-// Comprehensive Worksheet Module Integration
+// Import worksheet builder and processor.
 import { 
   WorksheetComponent, 
-  renderWorksheetModalContent, 
-  handleWorksheetModalSave,
+  WorksheetBuilder, 
+  processWorksheetData,
   WORKSHEET_QUESTION_TYPES,
   WORKSHEET_LAYOUTS 
 } from './WorksheetModule';
@@ -86,9 +86,23 @@ import {
   validateFormData
 } from './Utils/validationUtils';
 
-// Test in console
-console.log('✅ generateId:', generateId());
-console.log('✅ CARD_STYLES:', CARD_STYLES);
+
+// EXPORT FIX: global worksheet print utility
+const printWorksheet = (worksheetId) => {
+  const sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) { alert('Worksheet not found.'); return; }
+  const clone = sourceNode.cloneNode(true);
+  Array.from(clone.querySelectorAll('.no-print, .worksheet-print-button, button')).forEach(el => el.remove());
+  const titleNode = clone.querySelector('h2, h3, .worksheet-title');
+  const title = titleNode ? titleNode.textContent.trim() : 'Worksheet';
+  const styles = '<style>@page{size:8.5in 11in;margin:0.75in;}body{font-family:Times New Roman, Times, serif;font-size:12pt;line-height:1.5;color:#000;}input,textarea,select{border:1px solid #000;padding:4px 6px;background:#fff;color:#000;font-size:11pt;}</style>';
+  const w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked. Please enable pop-ups and try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' - Print</title>' + styles + '</head><body>' + clone.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\\/script></body></html>');
+  w.document.close();
+};
+if (typeof window !== 'undefined') { window.printWorksheet = printWorksheet; }
+
 
 const generateVideoEmbed = (platform, videoId, embedCode, aspectRatio) => {
   const aspectClass = {
@@ -252,7 +266,7 @@ const studentFriendlyTitles = {
 };
 
 // Section Component
-const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow }) => {
+const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow, handleWorksheetJsonImport }) => {
   const [draggedBlock, setDraggedBlock] = useState(null);
 
   const handleBlockDragStart = (e, blockId) => {
@@ -388,6 +402,7 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
                 toggleHtmlMode={toggleHtmlMode}
                 onAddBlockBelow={onAddBlockBelow}
                 sectionId={section.id}
+                handleWorksheetJsonImport={handleWorksheetJsonImport}
               />
             ))}
 
@@ -754,36 +769,43 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
   const [formData, setFormData] = useState(initialData);
   const [isHtmlMode, setIsHtmlMode] = useState(false);
   const [imageSource, setImageSource] = useState('upload');
-  const [modalHtmlMode, setModalHtmlMode] = useState(false); // ADD THIS LINE
+  const [modalHtmlMode, setModalHtmlMode] = useState(false);
   const [isLoadingVideoInfo, setIsLoadingVideoInfo] = useState(false);
 
   const handleFieldChange = useCallback((fieldName, value) => {
     setFormData(prev => ({ ...prev, [fieldName]: value }));
   }, []);
-
+  
   useEffect(() => {
     if (isOpen) {
-      setFormData(initialData);
+      if (contentType === 'worksheet') {
+        const initialWorksheetData = {
+          ...initialData,
+          worksheetTitle: initialData.title || '',
+          worksheetDescription: initialData.description || '',
+          worksheetTotalPoints: initialData.totalPoints || '',
+          worksheetQuestions: initialData.questions || []
+        };
+        setFormData(initialWorksheetData);
+      } else {
+        setFormData(initialData);
+      }
       setIsHtmlMode(false);
       setModalHtmlMode(false);
       setImageSource('upload');
     }
-  }, [isOpen, initialData]);
+  }, [isOpen, initialData, contentType]);
 
-  // NEW: Initialize metadata fields when files change
   useEffect(() => {
     if (imageSource === 'upload' && formData.imageFiles) {
       const files = Array.from(formData.imageFiles);
       if (files.length > 0) {
         const newFormData = { ...formData };
 
-        // Initialize metadata fields for each file if they don't exist
         files.forEach((file, index) => {
           const baseFieldName = files.length > 1 ? `image_${index}` : 'image';
-
-          // Only initialize if the field doesn't already exist
           if (!newFormData[`${baseFieldName}_alt`]) {
-            newFormData[`${baseFieldName}_alt`] = file.name.replace(/\.[^/.]+$/, ""); // filename without extension
+            newFormData[`${baseFieldName}_alt`] = file.name.replace(/\.[^/.]+$/, "");
           }
           if (!newFormData[`${baseFieldName}_caption`]) {
             newFormData[`${baseFieldName}_caption`] = '';
@@ -807,7 +829,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     }
   }, [formData.imageFiles, imageSource]);
 
-  // NEW: Initialize metadata fields when server filenames change
   useEffect(() => {
     if (imageSource === 'server' && formData.imageFilenames) {
       const filenames = formData.imageFilenames.split('\n').filter(Boolean);
@@ -816,8 +837,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
         filenames.forEach((filename, index) => {
           const baseFieldName = filenames.length > 1 ? `image_${index}` : 'image';
-
-          // Only initialize if the field doesn't already exist
           if (!newFormData[`${baseFieldName}_alt`]) {
             newFormData[`${baseFieldName}_alt`] = filename.replace(/\.[^/.]+$/, "");
           }
@@ -852,62 +871,79 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     });
   };
 
-  const fetchVideoInfo = async (url, platform) => {
-    setIsLoadingVideoInfo(true);
+// Add this helper above or below fetchVideoInfo
+function normalizeVideoUrl(rawUrl, platform) {
+  try {
+    const u = new URL(rawUrl);
 
-    try {
-      const videoId = extractVideoId(url, platform);
-
-      if (platform === 'youtube' && videoId) {
-        setFormData(prev => ({
-          ...prev,
-          videoTitle: '',
-          videoAuthor: '',
-          videoSource: 'YouTube',
-          videoUrl: url
-        }));
-        alert('🔍 YouTube URL detected! Please manually enter the video title and author.');
-
-      } else if (platform === 'vimeo' && videoId) {
-        setFormData(prev => ({
-          ...prev,
-          videoTitle: '',
-          videoAuthor: '',
-          videoSource: 'Vimeo',
-          videoUrl: url
-        }));
-        alert('🔍 Vimeo URL detected! Please manually enter the video title and author.');
-
-      } else if (platform === 'panopto' && url.includes('panopto.com')) {
-        try {
-          const urlObj = new URL(url);
-          const hostname = urlObj.hostname;
-
-          setFormData(prev => ({
-            ...prev,
-            videoTitle: 'Panopto Session',
-            videoAuthor: '',
-            videoSource: hostname || 'Panopto',
-            videoUrl: url
-          }));
-          alert('✅ Panopto URL processed! Please update the title and author.');
-        } catch (error) {
-          alert('⚠️ Invalid Panopto URL format.');
-        }
-      } else {
-        alert('⚠️ Invalid URL for the selected platform. Please check the URL and platform selection.');
+    if (platform === 'youtube') {
+      // Handle youtu.be/<id>?si=...  →  https://www.youtube.com/watch?v=<id>
+      if (u.hostname.includes('youtu.be')) {
+        const id = u.pathname.replace('/', '');
+        return `https://www.youtube.com/watch?v=${id}`;
       }
-
-    } catch (error) {
-      console.error('Error processing video info:', error);
-      alert('⚠️ Error processing URL. Please enter information manually.');
-    } finally {
-      setIsLoadingVideoInfo(false);
+      // Handle youtube.com/watch?v=<id>&... → keep only v
+      if (u.hostname.includes('youtube.com')) {
+        const v = u.searchParams.get('v');
+        if (v) return `https://www.youtube.com/watch?v=${v}`;
+      }
     }
-  };
 
-  // CORRECTED handleSubmit function for the ContentModal
-  // This should replace the existing handleSubmit function
+    if (platform === 'vimeo') {
+      // Strip query fragments; oEmbed/Data lookups don’t need them
+      return `https://vimeo.com${u.pathname}`;
+    }
+
+    // Panopto: leave as-is (org URLs often need the full query)
+    return rawUrl;
+  } catch {
+    return rawUrl; // If URL parsing fails, just send the original
+  }
+}
+
+
+const fetchVideoInfo = async (url, platform) => {
+  setIsLoadingVideoInfo(true);
+  try {
+    const normalizedUrl = normalizeVideoUrl(url, platform);
+
+    // Try validation but don't block the server call if it fails
+    let isOk = true;
+    try {
+      const { isValid } = validateVideoUrl(normalizedUrl, platform);
+      isOk = !!isValid;
+    } catch {
+      isOk = true;
+    }
+    if (!isOk) {
+      console.warn('[VideoMeta] Local validation failed; trying server anyway:', { normalizedUrl, platform });
+    }
+
+    const res = await fetch(`/api/video-meta.php?platform=${encodeURIComponent(platform)}&url=${encodeURIComponent(normalizedUrl)}`);
+    if (!res.ok) throw new Error(`Video meta request failed (${res.status})`);
+    const data = await res.json();
+    if (data.error) throw new Error(data.error);
+
+    setFormData(prev => ({
+      ...prev,
+      videoTitle: data.title || '',
+      videoAuthor: data.author || '',
+      videoSource: data.platform || '',
+      videoUrl: data.videoUrl || normalizedUrl,
+      videoDate: data.date || '',
+      videoChannelUrl: data.channelUrl || ''
+    }));
+
+    alert(`✅ ${data.platform} details fetched successfully.`);
+  } catch (err) {
+    console.error('Video info fetch error:', err);
+    alert('⚠️ Could not fetch video details. Please enter them manually.');
+  } finally {
+    setIsLoadingVideoInfo(false);
+  }
+};
+
+
 
   const handleSubmit = async () => {
     let processedData = { ...formData };
@@ -917,38 +953,24 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
         const files = imageSource === 'upload' ? Array.from(formData.imageFiles || []) : [];
         const filenames = imageSource === 'server' ? (formData.imageFilenames || '').split('\n').filter(name => name.trim()) : [];
 
-        // FIXED: Consistent calculation
         const sourceArray = imageSource === 'upload' ? files : filenames;
         const isMultiple = sourceArray.length > 1;
 
-        // VALIDATION: Check if files/filenames are provided
         if (sourceArray.length === 0 && !formData.isEditing) {
-          if (imageSource === 'upload') {
-            alert('⚠️ Please select at least one image file to upload.');
-          } else {
-            alert('⚠️ Please enter at least one image filename.');
-          }
+          alert(`⚠️ Please ${imageSource === 'upload' ? 'select at least one image file' : 'enter at least one image filename'}.`);
           return;
         }
 
         try {
+          let blockToSave;
           if (isMultiple) {
             const items = [];
-
-            // Process files sequentially to avoid async issues
             for (let i = 0; i < sourceArray.length; i++) {
               const sourceItem = sourceArray[i];
-              let itemSrc;
-
-              if (imageSource === 'upload') {
-                itemSrc = await handleFileToBase64(sourceItem);
-              } else {
-                const path = formData.imagePath || '';
-                const separator = path.endsWith('/') ? '' : '/';
-                itemSrc = `${path}${separator}${sourceItem}`;
-              }
-
               const baseFieldName = `image_${i}`;
+              let itemSrc = imageSource === 'upload' 
+                ? await handleFileToBase64(sourceItem)
+                : `${formData.imagePath || ''}${formData.imagePath?.endsWith('/') ? '' : '/'}${sourceItem}`;
 
               items.push({
                 src: itemSrc,
@@ -960,50 +982,17 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                 imageDate: formData[`${baseFieldName}_date`] || ''
               });
             }
-
-            // FIXED: Don't add ID here, let handleModalSave do it
-            // Also, don't spread formData as it contains file objects
-            const galleryBlock = {
-              type: 'gallery',
-              columns: formData.galleryColumns || '2',
-              items: items,
-              sectionId: formData.sectionId,  // Preserve sectionId for handleModalSave
-              isEditing: formData.isEditing,  // Preserve isEditing flag
-              insertAfterBlockId: formData.insertAfterBlockId
-            };
-
-            console.log('Gallery block being saved:', galleryBlock); // Debug log
-            onSave(galleryBlock);
-
+            blockToSave = { type: 'gallery', columns: formData.galleryColumns || '2', items };
           } else {
-            // Single image logic
             const singleItem = sourceArray[0];
-
-            if (!singleItem && !formData.isEditing) {
-              if (imageSource === 'upload') {
-                alert('⚠️ Please select an image file to upload.');
-              } else {
-                alert('⚠️ Please enter an image filename.');
-              }
-              return;
-            }
-
-            let imageSrc;
-
+            let imageSrc = formData.src;
             if (singleItem) {
-              if (imageSource === 'upload') {
-                imageSrc = await handleFileToBase64(singleItem);
-              } else {
-                const path = formData.imagePath || '';
-                const separator = path.endsWith('/') ? '' : '/';
-                imageSrc = `${path}${separator}${singleItem}`;
-              }
-            } else {
-              imageSrc = formData.src; // For editing existing images
+              imageSrc = imageSource === 'upload' 
+                ? await handleFileToBase64(singleItem)
+                : `${formData.imagePath || ''}${formData.imagePath?.endsWith('/') ? '' : '/'}${singleItem}`;
             }
-
-            // FIXED: Don't add ID here, follow original pattern
-            const imageBlock = {
+            
+            blockToSave = {
               type: 'image',
               src: imageSrc,
               alt: formData.image_alt || (singleItem ? (imageSource === 'upload' ? singleItem.name : singleItem) : 'Image'),
@@ -1012,16 +1001,10 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               imageTitle: formData.image_title || '',
               imageAuthor: formData.image_author || '',
               imageSource: formData.image_source || '',
-              imageDate: formData.image_date || '',
-              sectionId: formData.sectionId,  // Preserve sectionId
-              isEditing: formData.isEditing,   // Preserve isEditing flag
-              insertAfterBlockId: formData.insertAfterBlockId
+              imageDate: formData.image_date || ''
             };
-
-            console.log('Image block being saved:', imageBlock); // Debug log
-            onSave(imageBlock);
           }
-
+          onSave({ ...formData, ...blockToSave });
         } catch (error) {
           console.error('Error processing image(s):', error);
           alert(`⚠️ Error processing image file(s): ${error.message}`);
@@ -1046,94 +1029,43 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
           processedData.src = embedHtml.match(/src="([^"]*)"/)?.[1];
         }
 
-        onSave({ ...processedData, type: 'video', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
+        onSave({ ...processedData, type: 'video' });
         break;
 
       case 'audio':
         if (formData.audioFile) {
           try {
-            const base64 = await handleFileToBase64(formData.audioFile);
-            processedData.src = base64;
+            processedData.src = await handleFileToBase64(formData.audioFile);
           } catch (error) {
             console.error('Error processing audio:', error);
             alert('⚠️ Error processing audio file. Please try again.');
             return;
           }
         }
-
-        processedData.description = formData.audioDescription;
-        processedData.audioTitle = formData.audioTitle;
-        processedData.audioCreator = formData.audioCreator;
-        processedData.audioSourceInfo = formData.audioSourceInfo;
-        processedData.audioDateInfo = formData.audioDateInfo;
-
-        onSave({ ...processedData, type: 'audio', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
+        onSave({ ...processedData, type: 'audio' });
         break;
 
       case 'cards':
-        const textToHtml = (text) => {
-          if (!text) return '';
-          const lines = text.split('\n').filter(line => line.trim());
-          const htmlLines = lines.map(line => {
-            const trimmedLine = line.trim();
-            if (trimmedLine.startsWith('• ') || trimmedLine.startsWith('- ')) {
-              return `<li>${trimmedLine.substring(2)}</li>`;
-            } else if (/^\d+\./.test(trimmedLine)) {
-              return `<li>${trimmedLine.replace(/^\d+\.\s*/, '')}</li>`;
-            } else if (trimmedLine) {
-              return `<p>${trimmedLine}</p>`;
-            }
-            return '';
-          }).filter(line => line);
-
-          let result = '';
-          let inList = false;
-          htmlLines.forEach(line => {
-            if (line.startsWith('<li>')) {
-              if (!inList) {
-                result += '<ul>';
-                inList = true;
-              }
-              result += line;
-            } else {
-              if (inList) {
-                result += '</ul>';
-                inList = false;
-              }
-              result += line;
-            }
-          });
-          if (inList) {
-            result += '</ul>';
-          }
-          return result;
-        };
-
-        const cardItems = formData.cardItems || [{ title: '', content: '' }];
-        processedData.items = cardItems
+        processedData.items = (formData.cardItems || [])
           .filter(card => card.title || card.content)
           .map(card => ({
             title: card.title || '',
-            content: textToHtml(card.content || '')
+            content: card.content || '' // RichTextEditor provides HTML directly
           }));
-
-        processedData.layout = formData.cardLayout || '2x1';
-        processedData.style = formData.cardStyle || 'info';
-        onSave({ ...processedData, type: 'cards', sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
+        onSave({ ...processedData, type: 'cards' });
         break;
-
-      case 'worksheet':
-        const worksheetData = handleWorksheetModalSave(formData);
+      
+      case 'worksheet': {
+        const processedWorksheet = processWorksheetData(formData);
         onSave({ 
-          ...worksheetData, 
-          sectionId: formData.sectionId, 
-          isEditing: formData.isEditing, 
-          insertAfterBlockId: formData.insertAfterBlockId 
+          ...formData,
+          ...processedWorksheet
         });
         break;
+      }
 
       default:
-        onSave({ ...processedData, type: contentType, sectionId: formData.sectionId, isEditing: formData.isEditing, insertAfterBlockId: formData.insertAfterBlockId });
+        onSave({ ...processedData, type: contentType });
         break;
     }
 
@@ -1142,7 +1074,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
   if (!isOpen) return null;
 
-  // FIXED: Use consistent calculation
   const files = imageSource === 'upload' ? Array.from(formData.imageFiles || []) : [];
   const filenames = imageSource === 'server' ? (formData.imageFilenames || '').split('\n').filter(Boolean) : [];
   const sourceArray = imageSource === 'upload' ? files : filenames;
@@ -1160,7 +1091,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
 
         <div className="flex flex-col flex-grow overflow-hidden">
           <div className="p-6 flex-grow overflow-y-auto">
-            {/* Text-based content types */}
             {(['text', 'heading', 'list', 'info-box', 'exercise-box', 'warning-box'].includes(contentType)) && (
               <RichTextEditor
                 content={formData.content || ''}
@@ -1170,14 +1100,16 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                 isPreviewMode={false}
               />
             )}
+            
+            {contentType === 'worksheet' && (
+              <WorksheetBuilder 
+                formData={formData} 
+                setFormData={setFormData} 
+              />
+            )}
 
-            {/* Worksheet content */}
-            {contentType === 'worksheet' && renderWorksheetModalContent(formData, setFormData)}
-
-            {/* Video content */}
             {contentType === 'video' && (
               <div className="space-y-6">
-                {/* Platform Selector */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Video Platform</label>
                   <select
@@ -1192,7 +1124,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                   </select>
                 </div>
 
-                {/* Conditional Input: URL or Embed Code */}
                 {formData.videoPlatform === 'embed' ? (
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Embed Code</label>
@@ -1226,7 +1157,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                   </div>
                 )}
 
-                {/* Metadata and Citation Fields (Not for 'embed') */}
                 {formData.videoPlatform !== 'embed' && (
                   <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 space-y-4">
                     <h4 className="font-semibold text-gray-800">APA Citation Details (Optional)</h4>
@@ -1251,7 +1181,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                   </div>
                 )}
 
-                {/* Aspect Ratio */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">Aspect Ratio</label>
                   <select
@@ -1268,7 +1197,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               </div>
             )}
 
-            {/* FIXED: Image content */}
             {contentType === 'image' && (
               <div className="space-y-4">
                 <div>
@@ -1385,7 +1313,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                   </div>
                 )}
 
-                {/* FIXED: Always show metadata forms for selected images */}
                 <div className="space-y-4 mt-4">
                   {sourceArray.map((sourceItem, index) => (
                     <ImageMetadataForm
@@ -1401,7 +1328,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               </div>
             )}
 
-            {/* Audio content */}
             {contentType === 'audio' && (
               <div className="space-y-4">
                 <div>
@@ -1424,7 +1350,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                   />
                 </div>
 
-                {/* Citation fields */}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Audio Title:</label>
@@ -1466,7 +1391,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
               </div>
             )}
 
-            {/* Cards content */}
             {contentType === 'cards' && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -1507,7 +1431,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                   </div>
 
                   <div className="space-y-3">
-                    {/* Initialize with at least one card if none exist */}
                     {(() => {
                       const cards = formData.cardItems || [{ title: '', content: '' }];
                       return cards.map((card, index) => (
@@ -1536,16 +1459,12 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                               value={card?.title || ''}
                               onChange={(e) => {
                                 const newItems = [...cards];
-                                newItems[index] = {
-                                  ...newItems[index],
-                                  title: e.target.value
-                                };
+                                newItems[index] = { ...newItems[index], title: e.target.value };
                                 setFormData({ ...formData, cardItems: newItems });
                               }}
                               className="w-full p-3 border border-gray-300 rounded focus:ring-2 focus:ring-slate-500 focus:border-transparent"
                             />
 
-                            {/* UPDATED: Replace textarea with RichTextEditor */}
                             <div className="border border-gray-200 rounded-lg overflow-hidden">
                               <div className="bg-gray-50 px-3 py-2 border-b border-gray-200">
                                 <span className="text-sm font-medium text-gray-700">Card Content</span>
@@ -1554,14 +1473,11 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                                 content={card?.content || ''}
                                 onChange={(content) => {
                                   const newItems = [...cards];
-                                  newItems[index] = {
-                                    ...newItems[index],
-                                    content: content
-                                  };
+                                  newItems[index] = { ...newItems[index], content: content };
                                   setFormData({ ...formData, cardItems: newItems });
                                 }}
                                 isHtmlMode={false}
-                                onToggleHtmlMode={() => { }} // Not needed for cards
+                                onToggleHtmlMode={() => { }} 
                                 isPreviewMode={false}
                               />
                             </div>
@@ -1570,7 +1486,6 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
                       ));
                     })()}
 
-                    {/* Add Card Button - only show if less than 4 cards */}
                     {(formData.cardItems || []).length < 4 && (
                       <button
                         type="button"
@@ -1640,6 +1555,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
   const [saveIndicator, setSaveIndicator] = useState({ show: false, message: '', type: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [modalContentType, setModalContentType] = useState('');
   const [modalInitialData, setModalInitialData] = useState({});
   const [htmlModes, setHtmlModes] = useState({});
@@ -2532,6 +2448,11 @@ const LectureTemplateSystem = ({ initialData }) => {
     showSaveIndicator('📄 PDF export ready');
   };
 
+  /**
+   * ✅✅✅ START OF THE FIX ✅✅✅
+   * The code inside this 'getBlockHtml' function has been updated to generate
+   * interactive form fields for the worksheet export.
+   */
   const getBlockHtml = (block) => {
     switch (block.type) {
       case 'text':
@@ -2617,21 +2538,20 @@ const LectureTemplateSystem = ({ initialData }) => {
           success: { bg: 'bg-green-50', border: 'border-l-green-400', accent: 'text-green-700' }
         }[block.style] || { bg: 'bg-slate-50', border: 'border-l-slate-400', accent: 'text-slate-700' };
 
-        // Generate HTML for each card - content now supports rich text/HTML formatting
         const cardItemsHtml = block.items.map(item => `
-    <div class="p-6 rounded-xl border-l-4 ${cardStyleConfig.bg} ${cardStyleConfig.border} shadow-sm hover:shadow-md transition-shadow">
-      <h4 class="font-semibold mb-3 ${cardStyleConfig.accent}">${item.title}</h4>
-      <div class="text-gray-700 prose prose-sm max-w-none">${item.content}</div>
-    </div>
-  `).join('');
+          <div class="p-6 rounded-xl border-l-4 ${cardStyleConfig.bg} ${cardStyleConfig.border} shadow-sm hover:shadow-md transition-shadow">
+            <h4 class="font-semibold mb-3 ${cardStyleConfig.accent}">${item.title}</h4>
+            <div class="text-gray-700 prose prose-sm max-w-none">${item.content}</div>
+          </div>
+        `).join('');
 
         return `
-    <div class="my-6">
-      <div class="grid ${layoutClass} gap-4">
-        ${cardItemsHtml}
-      </div>
-    </div>
-  `;
+          <div class="my-6">
+            <div class="grid ${layoutClass} gap-4">
+              ${cardItemsHtml}
+            </div>
+          </div>
+        `;
 
       case 'worksheet':
         const totalPoints = block.questions
@@ -2639,22 +2559,24 @@ const LectureTemplateSystem = ({ initialData }) => {
           .reduce((sum, q) => sum + (q.points || 0), 0) || 0;
         
         const questionsHtml = block.questions?.map((question, index) => {
-          const questionNumber = index + 1;
-          
+          // Find the question number by filtering out instructions
+          const questionNumber = (block.questions.slice(0, index + 1).filter(q => q.type !== 'instructions')).length;
+
           switch (question.type) {
             case 'instructions':
               return `
                 <div class="worksheet-instructions mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 class="font-semibold text-blue-900 mb-2">${question.title}</h3>
-                  <div class="text-blue-800 whitespace-pre-wrap">${question.content}</div>
+                  <h3 class="font-semibold text-blue-900 mb-2">${question.title || 'Instructions'}</h3>
+                  <div class="text-blue-800 whitespace-pre-wrap">${question.content || ''}</div>
                 </div>
               `;
             
+            case 'mcq':
             case 'multiple_choice':
               const optionsHtml = (question.options || []).map((option, optionIndex) => 
                 `<div class="mb-2">
-                   <label class="flex items-center gap-3">
-                     <input type="radio" name="q${question.id}" value="${optionIndex}" class="print-checkbox">
+                   <label class="flex items-center gap-3 cursor-pointer">
+                     <input type="radio" name="q-${question.id || index}" value="${optionIndex}" class="print-checkbox">
                      <span>${String.fromCharCode(65 + optionIndex)}. ${option}</span>
                    </label>
                  </div>`
@@ -2665,87 +2587,75 @@ const LectureTemplateSystem = ({ initialData }) => {
                   <div class="flex items-start gap-3">
                     <span class="font-bold">${questionNumber}.</span>
                     <div class="flex-1">
-                      <p class="font-medium mb-3">${question.question}</p>
+                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
                       <div class="ml-4">${optionsHtml}</div>
-                      ${question.showCorrectAnswer ? `
-                        <div class="mt-3 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                          <strong>Correct Answer:</strong> ${String.fromCharCode(65 + question.correctAnswer)}
-                        </div>
-                      ` : ''}
                     </div>
-                    <span class="text-sm text-gray-500">(${question.points} pts)</span>
+                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
                   </div>
                 </div>
               `;
             
-            case 'true_false':
+            case 'true-false':
               return `
                 <div class="worksheet-question mb-6">
                   <div class="flex items-start gap-3">
                     <span class="font-bold">${questionNumber}.</span>
                     <div class="flex-1">
-                      <p class="font-medium mb-3">${question.question}</p>
+                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
                       <div class="ml-4 flex gap-6">
-                        <label class="flex items-center gap-2">
-                          <input type="radio" name="q${question.id}" value="true" class="print-checkbox">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="q-${question.id || index}" value="true" class="print-checkbox">
                           <span>True</span>
                         </label>
-                        <label class="flex items-center gap-2">
-                          <input type="radio" name="q${question.id}" value="false" class="print-checkbox">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                          <input type="radio" name="q-${question.id || index}" value="false" class="print-checkbox">
                           <span>False</span>
                         </label>
                       </div>
-                      ${question.showCorrectAnswer ? `
-                        <div class="mt-3 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                          <strong>Correct Answer:</strong> ${question.correctAnswer ? 'True' : 'False'}
-                        </div>
-                      ` : ''}
                     </div>
-                    <span class="text-sm text-gray-500">(${question.points} pts)</span>
+                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
                   </div>
                 </div>
               `;
             
-            case 'short_answer':
+            case 'short-answer':
               return `
                 <div class="worksheet-question mb-6">
                   <div class="flex items-start gap-3">
                     <span class="font-bold">${questionNumber}.</span>
                     <div class="flex-1">
-                      <p class="font-medium mb-3">${question.question}</p>
+                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
                       <div class="ml-4">
-                        <div class="border-b-2 border-gray-300 pb-2 mb-2 min-h-[40px]"></div>
-                        <div class="text-xs text-gray-500">Max ${question.maxLength} characters</div>
+                        <input type="text" placeholder="Your answer..." class="w-full p-2 border border-gray-300 rounded-md">
                       </div>
                     </div>
-                    <span class="text-sm text-gray-500">(${question.points} pts)</span>
+                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
                   </div>
                 </div>
               `;
             
-            case 'long_answer':
+            case 'long-answer':
               return `
                 <div class="worksheet-question mb-6">
                   <div class="flex items-start gap-3">
                     <span class="font-bold">${questionNumber}.</span>
                     <div class="flex-1">
-                      <p class="font-medium mb-3">${question.question}</p>
+                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
                       <div class="ml-4">
-                        <div class="border border-gray-300 rounded p-3 min-h-[120px] bg-gray-50"></div>
-                        <div class="text-xs text-gray-500 mt-1">Minimum ${question.minWords} words</div>
+                         <textarea rows="5" class="w-full p-2 border border-gray-300 rounded-md" placeholder="Your response..."></textarea>
                       </div>
                     </div>
-                    <span class="text-sm text-gray-500">(${question.points} pts)</span>
+                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
                   </div>
                 </div>
               `;
             
-            case 'fill_blank':
-              const questionText = question.question || '';
-              const parts = questionText.split('_____');
+            case 'fill-blank':
+              const questionText = question.content || question.question || '';
+              const parts = questionText.split(/_{3,}/g); // Split by 3 or more underscores
               const filledQuestion = parts.map((part, partIndex) => {
                 if (partIndex < parts.length - 1) {
-                  return `${part}<span class="inline-block border-b-2 border-blue-300 min-w-[100px] mx-1 pb-1"></span>`;
+                  return `${part}<input type="text" class="inline-block border-b-2 border-gray-400 mx-1 px-1 w-32" />`;
                 }
                 return part;
               }).join('');
@@ -2755,14 +2665,9 @@ const LectureTemplateSystem = ({ initialData }) => {
                   <div class="flex items-start gap-3">
                     <span class="font-bold">${questionNumber}.</span>
                     <div class="flex-1">
-                      <div class="font-medium mb-3">${filledQuestion}</div>
-                      ${question.showCorrectAnswer && question.blanks ? `
-                        <div class="mt-3 p-2 bg-green-50 border border-green-200 rounded text-sm">
-                          <strong>Correct Answers:</strong> ${question.blanks.join(', ')}
-                        </div>
-                      ` : ''}
+                      <p class="font-medium mb-3">${filledQuestion}</p>
                     </div>
-                    <span class="text-sm text-gray-500">(${question.points} pts)</span>
+                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
                   </div>
                 </div>
               `;
@@ -2776,8 +2681,8 @@ const LectureTemplateSystem = ({ initialData }) => {
                 const value = scaleMin + i;
                 const label = scaleLabels[i];
                 return `
-                  <label class="flex flex-col items-center gap-1 mx-2">
-                    <input type="radio" name="q${question.id}" value="${value}" class="print-checkbox">
+                  <label class="flex flex-col items-center gap-1 mx-2 cursor-pointer">
+                    <input type="radio" name="q-${question.id || index}" value="${value}" class="print-checkbox">
                     <span class="text-sm font-medium">${value}</span>
                     ${label ? `<span class="text-xs text-gray-600 text-center">${label}</span>` : ''}
                   </label>
@@ -2789,12 +2694,12 @@ const LectureTemplateSystem = ({ initialData }) => {
                   <div class="flex items-start gap-3">
                     <span class="font-bold">${questionNumber}.</span>
                     <div class="flex-1">
-                      <p class="font-medium mb-3">${question.question}</p>
+                      <p class="font-medium mb-3">${question.title || question.question || ''}</p>
                       <div class="ml-4 flex items-center gap-2 flex-wrap">
                         ${scaleHtml}
                       </div>
                     </div>
-                    <span class="text-sm text-gray-500">(${question.points} pts)</span>
+                    <span class="text-sm text-gray-500">(${question.points || 0} pts)</span>
                   </div>
                 </div>
               `;
@@ -2805,10 +2710,12 @@ const LectureTemplateSystem = ({ initialData }) => {
         }).join('') || '';
         
         return `
-          <div class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
-            <!-- Worksheet Header -->
+          <div id="worksheet-${block.id}" class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
             <div class="worksheet-header mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h2 class="text-xl font-bold text-gray-900 mb-2">${block.title}</h2>
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-xl font-bold text-gray-900">${block.title}</h2>
+                <button class="no-print worksheet-print-button inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm" onclick="printWorksheet('worksheet-${block.id}')">Print Worksheet Only</button>
+              </div>
               ${block.description ? `<p class="text-gray-700 mb-2">${block.description}</p>` : ''}
               <div class="flex items-center justify-between text-sm text-gray-600">
                 <span>Total Points: ${totalPoints}</span>
@@ -2816,21 +2723,19 @@ const LectureTemplateSystem = ({ initialData }) => {
               </div>
             </div>
             
-            <!-- Student Info Section -->
             <div class="student-info mb-6 p-4 border border-gray-300 rounded-lg bg-white">
               <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Student Name:</label>
-                  <div class="border-b-2 border-gray-300 pb-2 min-h-[30px]"></div>
+                  <input type="text" class="w-full p-2 border border-gray-300 rounded-md" />
                 </div>
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">Date:</label>
-                  <div class="border-b-2 border-gray-300 pb-2 min-h-[30px]"></div>
+                  <input type="date" class="w-full p-2 border border-gray-300 rounded-md" />
                 </div>
               </div>
             </div>
             
-            <!-- Questions -->
             <div class="worksheet-questions">
               ${questionsHtml}
             </div>
@@ -2841,6 +2746,9 @@ const LectureTemplateSystem = ({ initialData }) => {
         return `<div>Unsupported content type: ${block.type}</div>`;
     }
   };
+  /**
+   * ✅✅✅ END OF THE FIX ✅✅✅
+   */
 
   const handleExportHTML = async () => {
     showSaveIndicator('🔒 Preparing locked HTML...', 'saving');
@@ -2848,7 +2756,6 @@ const LectureTemplateSystem = ({ initialData }) => {
 
     const processedSections = await embedImagesInSections(sections);
 
-    // inside handleExportHTML (App.js)
     const headerHtml = `
   <header class="bg-white border-b border-gray-200">
     <div class="max-w-7xl mx-auto px-6 py-12">
@@ -2877,13 +2784,11 @@ const LectureTemplateSystem = ({ initialData }) => {
   </header>
 `;
 
-    // inside handleExportHTML (App.js)
     const navHtml = `
 <nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
   <div class="max-w-8xl mx-auto px-6">
     <ul class="flex justify-center gap-1 py-2 flex-wrap">
       ${sections.map(section => {
-      // only student-friendly label (fallback to formal if missing)
       const label = studentFriendlyTitles[section.id] || section.title;
       return `
         <li>
@@ -2907,7 +2812,6 @@ const LectureTemplateSystem = ({ initialData }) => {
       'summary': { bg: 'bg-indigo-500' }, 'resources': { bg: 'bg-gray-600' }
     };
 
-    // inside handleExportHTML (App.js)
     const sectionsHtml = processedSections.map(section => {
       const label = studentFriendlyTitles[section.id] || section.title;
       const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
@@ -2965,14 +2869,12 @@ const LectureTemplateSystem = ({ initialData }) => {
                 window.requestAnimationFrame(step);
             }
 
-            // Improved section header click handling
             document.querySelectorAll('.section-header').forEach(header => {
                 header.addEventListener('click', function() {
                     const content = this.nextElementSibling;
                     const icon = this.querySelector('.toggle-icon');
                     
                     if (content && icon) {
-                        // Toggle the closed state
                         const isClosed = content.classList.contains('closed');
                         
                         if (isClosed) {
@@ -2986,7 +2888,6 @@ const LectureTemplateSystem = ({ initialData }) => {
                 });
             });
             
-            // Improved navigation click handling
             document.querySelectorAll('nav a').forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -2997,13 +2898,11 @@ const LectureTemplateSystem = ({ initialData }) => {
                         const content = targetSection.querySelector('.content-container');
                         const icon = targetSection.querySelector('.toggle-icon');
                         
-                        // Always open the target section when clicking nav
                         if (content && content.classList.contains('closed')) {
                             content.classList.remove('closed');
                             if (icon) icon.classList.add('rotated');
                         }
                         
-                        // Smooth scroll to the section
                         const elementPosition = targetSection.getBoundingClientRect().top + window.pageYOffset;
                         const offsetPosition = elementPosition - 60; 
                         smoothScrollTo(offsetPosition, 1000);
@@ -3028,11 +2927,17 @@ const LectureTemplateSystem = ({ initialData }) => {
         .toggle-icon.rotated { 
             transform: rotate(90deg); 
         }
-        body { 
+        body {
             background-color: #f9fafb;
         }
 
-        /* ===== CORRECTED ACCORDION STYLES ===== */
+        /* EXPORT FIX: ensure accordion titles are white with no underline */
+        .section-header h2,
+        .section-header h2 a {
+            color: #fff;
+            text-decoration: none;
+        }
+
         .content-container {
             display: grid;
             grid-template-rows: 1fr;
@@ -3049,7 +2954,6 @@ const LectureTemplateSystem = ({ initialData }) => {
             overflow: hidden;
         }
         
-        /* Ensure smooth animation performance */
         .content-container * {
             will-change: auto;
         }
@@ -3077,7 +2981,27 @@ const LectureTemplateSystem = ({ initialData }) => {
       </html>
     `;
 
-    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const __PRINT_WORKSHEET_SCRIPT__ = `<script>
+function printWorksheet(worksheetId) {
+  var sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) { alert('Worksheet not found.'); return; }
+  var clone = sourceNode.cloneNode(true);
+  Array.from(clone.querySelectorAll('.no-print, .worksheet-print-button, button')).forEach(function(el){ el.remove(); });
+  var titleNode = clone.querySelector('h2, h3, .worksheet-title');
+  var title = titleNode ? titleNode.textContent.trim() : 'Worksheet';
+  var styles = '<style>@page{size:8.5in 11in;margin:0.75in;}body{font-family:Times New Roman, Times, serif;font-size:12pt;line-height:1.5;color:#000;}input,textarea,select{border:1px solid #000;padding:4px 6px;background:#fff;color:#000;font-size:11pt;}</style>';
+  var w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked. Please enable pop-ups and try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' - Print</title>' + styles + '</head><body>' + clone.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\\/script></body></html>');
+  w.document.close();
+}
+window.printWorksheet = printWorksheet;
+</script>`;
+
+    let exportedHtml = fullHtml.replace(/<\/body>/i, __PRINT_WORKSHEET_SCRIPT__ + '</body>');
+    exportedHtml = exportedHtml.replace(/^\s*\.\s*$/gm, '');
+
+    const blob = new Blob([exportedHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3164,13 +3088,55 @@ const LectureTemplateSystem = ({ initialData }) => {
     event.target.value = '';
   };
 
-  // CORRECTED handleModalSave function
-  // This should replace the existing handleModalSave function in the main component
+  // WORKSHEET JSON IMPORT
+  const handleWorksheetJsonImport = (blockId) => async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!Array.isArray(data.questions)) {
+        alert('Invalid JSON: "questions" must be an array');
+        return;
+      }
+
+      const update = {
+        ...(data.title ? { title: data.title } : {}),
+        ...(data.instructions ? { instructions: data.instructions } : {}),
+        ...(data.footerNote ? { footerNote: data.footerNote } : {}),
+        questions: data.questions.map((q, idx) => ({
+          id: q.id || `q_${Date.now()}_${idx}`,
+          type: q.type || 'shortAnswer',
+          prompt: q.prompt || '',
+          placeholder: q.placeholder || '',
+          options: Array.isArray(q.options) ? q.options : [],
+          maxLength: q.maxLength || undefined,
+          points: Number.isFinite(q.points) ? q.points : 0,
+        })),
+      };
+
+      setSections(prev => prev.map(section => ({
+        ...section,
+        blocks: section.blocks.map(b => {
+          if (b.id !== blockId) return b;
+          return { ...b, ...update };
+        })
+      })));
+
+      alert('Worksheet imported successfully.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to parse JSON. Please check the schema.');
+    } finally {
+      e.target.value = '';
+    }
+  };
 
   const handleModalSave = (blockData) => {
     const { sectionId, isEditing, insertAfterBlockId, ...content } = blockData;
 
-    console.log('handleModalSave received:', blockData); // Debug log
+    console.log('handleModalSave received:', blockData);
 
     if (isEditing) {
       setSections(prevSections =>
@@ -3180,23 +3146,19 @@ const LectureTemplateSystem = ({ initialData }) => {
               ...section,
               blocks: section.blocks.map(block => {
                 if (block.id === content.id) {
-                  // Merge the updated content with the existing block
                   let updatedBlock = { ...block, ...content };
 
-                  // Special handling for cards - ensure items are properly set
                   if (block.type === 'cards') {
                     updatedBlock.items = content.cardItems || content.items || [];
                     updatedBlock.layout = content.cardLayout || content.layout || '2x1';
                     updatedBlock.style = content.cardStyle || content.style || 'info';
                   }
 
-                  // ADDED: Special handling for galleries
                   if (block.type === 'gallery') {
                     updatedBlock.items = content.items || [];
                     updatedBlock.columns = content.columns || '2';
                   }
 
-                  // Special handling for worksheets
                   if (block.type === 'worksheet') {
                     updatedBlock.title = content.title || block.title;
                     updatedBlock.description = content.description || block.description;
@@ -3215,15 +3177,13 @@ const LectureTemplateSystem = ({ initialData }) => {
       );
       showSaveIndicator(`💾 ${content.type} content updated`);
     } else {
-      // Create new block
       const newBlock = {
         id: generateId(),
         ...content,
-        // Don't override the type that comes from content, use modalContentType as fallback
         type: content.type || modalContentType,
       };
 
-      console.log('Creating new block:', newBlock); // Debug log
+      console.log('Creating new block:', newBlock);
 
       const targetSectionId = sectionId || defaultSection || 'overview';
       setSections(prevSections =>
@@ -3252,37 +3212,26 @@ const LectureTemplateSystem = ({ initialData }) => {
 
     let initialDataForModal = { ...blockToEdit, sectionId, isEditing: true };
 
-    // Helper function to convert HTML to plain text for editing
     const htmlToText = (html) => {
       if (!html) return '';
-
-      // Create a temporary div to parse HTML
       const temp = document.createElement('div');
       temp.innerHTML = html;
-
-      // Convert lists to plain text with bullet points
       const listItems = temp.querySelectorAll('li');
       listItems.forEach(li => {
         li.innerHTML = '• ' + li.innerHTML;
       });
-
-      // Remove HTML tags but preserve line breaks
       return temp.textContent || temp.innerText || '';
     };
 
-    // Special handling for different content types
     if (blockToEdit.type === 'cards') {
-      // UPDATED: Preserve HTML content instead of converting to plain text
       const cleanedItems = (blockToEdit.items || []).map(item => ({
         title: item.title || '',
-        content: item.content || '' // Keep HTML formatting intact
+        content: item.content || ''
       }));
-
       initialDataForModal.cardItems = cleanedItems;
       initialDataForModal.cardLayout = blockToEdit.layout || '2x1';
       initialDataForModal.cardStyle = blockToEdit.style || 'info';
     } else if (blockToEdit.type === 'image') {
-      // Handle image editing - map existing image data
       initialDataForModal.image_alt = blockToEdit.alt;
       initialDataForModal.image_size = blockToEdit.size;
       initialDataForModal.image_caption = blockToEdit.caption?.replace('<strong>Figure:</strong> ', '') || '';
@@ -3291,10 +3240,8 @@ const LectureTemplateSystem = ({ initialData }) => {
       initialDataForModal.image_source = blockToEdit.imageSource;
       initialDataForModal.image_date = blockToEdit.imageDate;
     } else if (blockToEdit.type === 'gallery') {
-      // Handle gallery editing
       initialDataForModal.galleryColumns = blockToEdit.columns;
-      initialDataForModal.imageFiles = null; // Will be populated if user uploads new files
-      // Map existing gallery items for display/editing
+      initialDataForModal.imageFiles = null;
       if (blockToEdit.items) {
         blockToEdit.items.forEach((item, index) => {
           const baseFieldName = `image_${index}`;
@@ -3307,7 +3254,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         });
       }
     } else if (blockToEdit.type === 'video') {
-      // Handle video editing
       initialDataForModal.videoPlatform = blockToEdit.videoPlatform || 'youtube';
       initialDataForModal.videoUrl = blockToEdit.videoUrl;
       initialDataForModal.embedCode = blockToEdit.embedCode;
@@ -3317,19 +3263,16 @@ const LectureTemplateSystem = ({ initialData }) => {
       initialDataForModal.videoDate = blockToEdit.videoDate;
       initialDataForModal.videoSource = blockToEdit.videoSource;
     } else if (blockToEdit.type === 'audio') {
-      // Handle audio editing
       initialDataForModal.audioDescription = blockToEdit.description;
       initialDataForModal.audioTitle = blockToEdit.audioTitle;
       initialDataForModal.audioCreator = blockToEdit.audioCreator;
       initialDataForModal.audioSourceInfo = blockToEdit.audioSourceInfo;
       initialDataForModal.audioDateInfo = blockToEdit.audioDateInfo;
-      // Note: We can't edit the audio file itself in edit mode, only metadata
     } else if (blockToEdit.type === 'worksheet') {
-      // Handle worksheet editing
       initialDataForModal.worksheetTitle = blockToEdit.title;
       initialDataForModal.worksheetDescription = blockToEdit.description;
       initialDataForModal.worksheetLayout = blockToEdit.layout;
-      // Note: Worksheet questions editing is handled within the worksheet modal itself
+      initialDataForModal.questions = blockToEdit.questions || [];
     }
 
     setModalInitialData(initialDataForModal);
@@ -3351,11 +3294,9 @@ const LectureTemplateSystem = ({ initialData }) => {
   };
 
   const handleToggleAllSections = () => {
-    // If any sections are open, close them all.
     if (openSectionIds.length > 0) {
       setOpenSectionIds([]);
     } else {
-      // If all sections are closed, open them all.
       const allSectionIds = sections.map(section => section.id);
       setOpenSectionIds(allSectionIds);
     }
@@ -3366,14 +3307,12 @@ const LectureTemplateSystem = ({ initialData }) => {
     if (!openSectionIds.includes(sectionId)) {
       setOpenSectionIds(prev => [...prev, sectionId]);
     }
-    // Use a timeout to allow the accordion to start opening before scrolling
     setTimeout(() => {
       const element = document.getElementById(sectionId);
       if (element) {
         const elementPosition = element.getBoundingClientRect().top + window.pageYOffset;
-        // Offset to account for the sticky nav bar (adjust 60 if your nav is taller/shorter)
         const offsetPosition = elementPosition - 60;
-        smoothScrollTo(offsetPosition, 1000); // Using the new function
+        smoothScrollTo(offsetPosition, 1000);
       }
     }, 100);
   };
@@ -3389,7 +3328,6 @@ const LectureTemplateSystem = ({ initialData }) => {
     <div className="lesson-template-container min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
       <SaveIndicator {...saveIndicator} />
 
-      {/* Auto-save Recovery Modal */}
       <AutoSaveRecoveryModal
         isOpen={showAutoSaveRecovery}
         onRecover={handleRecoverAutoSave}
@@ -3397,11 +3335,9 @@ const LectureTemplateSystem = ({ initialData }) => {
         timestamp={autoSaveData?.timestamp}
       />
 
-      {/* Control Panel Toggle Button */}
       <button
         onClick={() => setIsControlPanelOpen(!isControlPanelOpen)}
-        className={`fixed top-6 z-50 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center gap-2 shadow-lg transition-all no-print h-12 px-4 ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'
-          }`}
+        className={`fixed top-6 z-50 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center gap-2 shadow-lg transition-all no-print h-12 px-4 ${isControlPanelOpen ? 'right-[26rem]' : 'right-6'}`}
       >
         <Settings size={20} />
         <span>Customize Template</span>
@@ -3438,7 +3374,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         <div className="max-w-7xl mx-auto px-6 py-12">
           <div className="flex items-start justify-between space-x-6">
 
-            {/* ← LEFT COLUMN: Date over Logo */}
             <div className="flex flex-col items-center md:items-start space-y-3">
               <p className="text-lg text-gray-600">{displayDate}</p>
               {hasLogo && (
@@ -3449,7 +3384,6 @@ const LectureTemplateSystem = ({ initialData }) => {
               )}
             </div>
 
-            {/* ← MIDDLE COLUMN: Editable Title */}
             <div className={`text-center md:text-left transition-all duration-200 ${isEditingTitle ? 'flex-[2]' : 'flex-1'}`}>
               {!isEditingTitle ? (
                 <h1
@@ -3474,7 +3408,6 @@ const LectureTemplateSystem = ({ initialData }) => {
               <p className="text-xs text-gray-500 italic mt-1">Click the title to edit</p>
             </div>
 
-            {/* ← RIGHT COLUMN: Instructor Info */}
             <div className="flex-shrink-0">
               <div className="grid grid-cols-[auto,1fr] gap-x-4 gap-y-1 items-center">
                 <span className="font-medium text-gray-800 text-right">Instructor:</span>
@@ -3503,7 +3436,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         </div>
       </header>
 
-      {/* Navigation */}
       <nav className="bg-white border-b border-gray-200 sticky top-0 z-40 no-print">
         <div className="max-w-7xl mx-auto px-6">
           <div className="py-2 flex justify-center">
@@ -3527,7 +3459,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         </div>
       </nav>
 
-      {/* Control Bar */}
       <div className="bg-gray-50 border-b border-gray-200 no-print">
         <div className="max-w-7xl mx-auto px-6 py-2">
           <div className="flex items-center gap-2">
@@ -3587,6 +3518,13 @@ const LectureTemplateSystem = ({ initialData }) => {
               <Upload size={16} />
               Load
             </button>
+            <button
+              onClick={() => setIsHelpOpen(true)}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <HelpCircle size={16} />
+              Help
+            </button>
             <div className="ml-auto text-sm text-gray-500">
               {openSectionIds.length}/{sections.length} open
             </div>
@@ -3594,7 +3532,6 @@ const LectureTemplateSystem = ({ initialData }) => {
         </div>
       </div>
 
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto px-16 py-12">
         {sections.map(section => (
           <Section
@@ -3610,20 +3547,19 @@ const LectureTemplateSystem = ({ initialData }) => {
             htmlModes={htmlModes}
             toggleHtmlMode={toggleHtmlMode}
             onAddBlockBelow={handleAddBlockBelow}
+            handleWorksheetJsonImport={handleWorksheetJsonImport}
           />
         ))}
       </div>
 
-      {/* Footer */}
       <footer className="bg-gray-900 text-white py-8 mt-16 print-break-before">
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="mb-2 font-medium">{headerData.footerCourseInfo}</p>
-          <p className="mb-2 text-gray-300">{headerData.footerInstitution}</p>
-          <p className="text-gray-400 text-sm">{headerData.footerCopyright}</p>
+          <p className="mb-2 font-medium">${headerData.footerCourseInfo}</p>
+          <p className="mb-2 text-gray-300">${headerData.footerInstitution}</p>
+          <p className="text-gray-400 text-sm">${headerData.footerCopyright}</p>
         </div>
       </footer>
 
-      {/* Content Modal */}
       <ContentModal
         isOpen={isModalOpen}
         contentType={modalContentType}
@@ -3632,12 +3568,36 @@ const LectureTemplateSystem = ({ initialData }) => {
         initialData={modalInitialData}
       />
 
-      {/* School Logo Settings Modal */}
+      {isHelpOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-4">Help</h2>
+            <p className="text-sm mb-4">
+              Download an example worksheet JSON file to use with the import feature.
+            </p>
+            <a
+              href="/worksheet-example.json"
+              download
+              className="text-blue-600 underline"
+            >
+              Example worksheet JSON
+            </a>
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showLogoSettings && (
         <SchoolLogoSettings onClose={() => setShowLogoSettings(false)} />
       )}
 
-      {/* Back to Top Button */}
       <button
         onClick={() => smoothScrollTo(0, 1000)}
         className="back-to-top-button fixed bottom-8 right-8 w-12 h-12 bg-slate-700 hover:bg-slate-800 text-white rounded-xl flex items-center justify-center shadow-lg transition-all no-print opacity-0 invisible hover:opacity-100 hover:visible"

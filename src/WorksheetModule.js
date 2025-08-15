@@ -90,18 +90,20 @@ export function WorksheetComponent({ worksheet, isEditMode }) {
     .filter(q => q && q.type !== 'instructions')
     .reduce((sum, q) => sum + (q.points || 0), 0);
 
+  const containerId = `worksheet-${data.id || 'temp'}`;
+
   return (
-    <div className="my-6 p-4 rounded-lg border border-gray-200 bg-white">
+    <div id={containerId} className="my-6 p-4 rounded-lg border border-gray-200 bg-white">
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-lg font-semibold">{data.title || 'Worksheet'}</h3>
         {!isEditMode && (
           <button
             type="button"
-            onClick={() => window.print()}
-            className="no-print inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm hover:bg-slate-800"
+            onClick={() => (window.printWorksheet ? window.printWorksheet(containerId) : window.print())}
+            className="no-print worksheet-print-button inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm hover:bg-slate-800"
             aria-label="Print worksheet"
           >
-            Print
+            Print Worksheet Only
           </button>
         )}
       </div>
@@ -210,6 +212,63 @@ export const WorksheetBuilder = ({ formData, setFormData }) => {
     update({ worksheetQuestions: next });
   };
 
+  // WORKSHEET JSON IMPORT
+  const handleJsonImport = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!Array.isArray(data.questions)) {
+        alert('Invalid JSON: "questions" must be an array');
+        return;
+      }
+
+      const mapped = data.questions.map((q) => {
+        const pts = Number.isFinite(q.points) ? q.points : 0;
+        switch (q.type) {
+          case 'longAnswer':
+            return { type: 'long-answer', title: q.prompt || '', points: pts };
+          case 'multipleChoice':
+            return {
+              type: 'mcq',
+              title: q.prompt || '',
+              options: Array.isArray(q.options) ? q.options : [],
+              correctIndex: -1,
+              points: pts,
+            };
+          case 'checkboxes':
+            return {
+              type: 'mcq',
+              title: q.prompt || '',
+              options: Array.isArray(q.options) ? q.options : [],
+              correctIndex: -1,
+              points: pts,
+            };
+          case 'shortAnswer':
+          default:
+            return { type: 'short-answer', title: q.prompt || '', points: pts };
+        }
+      });
+
+      setFormData(prev => ({
+        ...prev,
+        worksheetTitle: data.title || prev.worksheetTitle || 'Worksheet',
+        worksheetDescription: data.instructions || prev.worksheetDescription || '',
+        worksheetQuestions: mapped,
+        worksheetTotalPoints: mapped.reduce((sum, q) => sum + (q.points || 0), 0),
+      }));
+
+      alert('Worksheet imported successfully.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to parse JSON. Please check the schema.');
+    } finally {
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -244,6 +303,13 @@ export const WorksheetBuilder = ({ formData, setFormData }) => {
           onChange={(e) => update({ worksheetDescription: e.target.value })}
           placeholder="Brief directions for students…"
         />
+      </div>
+
+      {/* WORKSHEET JSON IMPORT */}
+      <div className="no-print">
+        <label className="block text-sm font-medium mb-1">Import Worksheet JSON</label>
+        <input type="file" accept="application/json" onChange={handleJsonImport} />
+        <p className="text-xs text-gray-500 mt-1">Choose a .json file that follows the worksheet schema.</p>
       </div>
 
       {/* Questions */}

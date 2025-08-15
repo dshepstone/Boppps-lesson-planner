@@ -33,6 +33,7 @@ const WorksheetBlock = memo(function WorksheetBlock({
   onBlockUpdate = noop,
   onSaveBlock = noop,
   isStudentView = false,
+  onImportJson = noop,
 }) {
   if (!block) return null;
 
@@ -47,12 +48,19 @@ const WorksheetBlock = memo(function WorksheetBlock({
       />
 
       {isEditMode && (
-        <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-          <p className="text-blue-800 text-sm">
-            📝 <strong>Worksheet Block:</strong> Students can fill out and print this worksheet.
-            Use the editor above to add questions, set points, and tweak options.
-          </p>
-        </div>
+        <>
+          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              📝 <strong>Worksheet Block:</strong> Students can fill out and print this worksheet.
+              Use the editor above to add questions, set points, and tweak options.
+            </p>
+          </div>
+          <div className="no-print mt-3">
+            <label className="text-sm font-medium block mb-2">Import Worksheet JSON</label>
+            <input type="file" accept="application/json" onChange={onImportJson(block.id)} />
+            <p className="text-xs text-gray-500 mt-1">Choose a .json file that follows the worksheet schema.</p>
+          </div>
+        </>
       )}
     </div>
   );

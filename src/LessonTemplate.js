@@ -3,7 +3,7 @@
   Preserves all original UI and functionality while adding comprehensive worksheet support
 */
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, ChevronUp } from 'lucide-react';
+import { Download, Upload, Eye, Edit3, Save, Plus, Video, Image, Music, CreditCard, X, Settings, ChevronDown, ChevronRight, GripVertical, Trash2, Copy, FileText, List, AlertCircle, CheckCircle, AlertTriangle, Play, Pause, Clock, HelpCircle, ChevronUp } from 'lucide-react';
 import { LogoProvider, useLogo } from './LogoContext';
 import SchoolLogoSettings from './SchoolLogoSettings';
 
@@ -85,6 +85,23 @@ import {
   validateEmail,
   validateFormData
 } from './Utils/validationUtils';
+
+
+// EXPORT FIX: global worksheet print utility
+const printWorksheet = (worksheetId) => {
+  const sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) { alert('Worksheet not found.'); return; }
+  const clone = sourceNode.cloneNode(true);
+  Array.from(clone.querySelectorAll('.no-print, .worksheet-print-button, button')).forEach(el => el.remove());
+  const titleNode = clone.querySelector('h2, h3, .worksheet-title');
+  const title = titleNode ? titleNode.textContent.trim() : 'Worksheet';
+  const styles = '<style>@page{size:8.5in 11in;margin:0.75in;}body{font-family:Times New Roman, Times, serif;font-size:12pt;line-height:1.5;color:#000;}input,textarea,select{border:1px solid #000;padding:4px 6px;background:#fff;color:#000;font-size:11pt;}</style>';
+  const w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked. Please enable pop-ups and try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' - Print</title>' + styles + '</head><body>' + clone.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\\/script></body></html>');
+  w.document.close();
+};
+if (typeof window !== 'undefined') { window.printWorksheet = printWorksheet; }
 
 
 const generateVideoEmbed = (platform, videoId, embedCode, aspectRatio) => {
@@ -249,7 +266,7 @@ const studentFriendlyTitles = {
 };
 
 // Section Component
-const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow }) => {
+const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection, onBlockEdit, isOpen, onToggle, htmlModes, toggleHtmlMode, onAddBlockBelow, handleWorksheetJsonImport }) => {
   const [draggedBlock, setDraggedBlock] = useState(null);
 
   const handleBlockDragStart = (e, blockId) => {
@@ -385,6 +402,7 @@ const Section = ({ section, onUpdate, isEditMode, onAddContent, onDeleteSection,
                 toggleHtmlMode={toggleHtmlMode}
                 onAddBlockBelow={onAddBlockBelow}
                 sectionId={section.id}
+                handleWorksheetJsonImport={handleWorksheetJsonImport}
               />
             ))}
 
@@ -857,27 +875,67 @@ const ContentModal = ({ isOpen, contentType, onClose, onSave, initialData = {} }
     setIsLoadingVideoInfo(true);
 
     try {
+      const { isValid } = validateVideoUrl(url, platform);
+      if (!isValid) {
+        alert('⚠️ Invalid URL for the selected platform. Please check the URL and platform selection.');
+        return;
+      }
+
       const videoId = extractVideoId(url, platform);
 
       if (platform === 'youtube' && videoId) {
-        setFormData(prev => ({
-          ...prev,
-          videoTitle: '',
-          videoAuthor: '',
-          videoSource: 'YouTube',
-          videoUrl: url
-        }));
-        alert('🔍 YouTube URL detected! Please manually enter the video title and author.');
+        try {
+          const response = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`);
+          if (!response.ok) throw new Error('YouTube oEmbed request failed');
+          const data = await response.json();
+
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: data.title || '',
+            videoAuthor: data.author_name || '',
+            videoSource: 'YouTube',
+            videoUrl: url
+          }));
+
+          alert('✅ YouTube video details fetched successfully.');
+        } catch (err) {
+          console.error('YouTube info fetch error:', err);
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: '',
+            videoAuthor: '',
+            videoSource: 'YouTube',
+            videoUrl: url
+          }));
+          alert('⚠️ Could not fetch YouTube details. Please enter them manually.');
+        }
 
       } else if (platform === 'vimeo' && videoId) {
-        setFormData(prev => ({
-          ...prev,
-          videoTitle: '',
-          videoAuthor: '',
-          videoSource: 'Vimeo',
-          videoUrl: url
-        }));
-        alert('🔍 Vimeo URL detected! Please manually enter the video title and author.');
+        try {
+          const response = await fetch(`https://vimeo.com/api/oembed.json?url=${encodeURIComponent(url)}`);
+          if (!response.ok) throw new Error('Vimeo oEmbed request failed');
+          const data = await response.json();
+
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: data.title || '',
+            videoAuthor: data.author_name || '',
+            videoSource: 'Vimeo',
+            videoUrl: url
+          }));
+
+          alert('✅ Vimeo video details fetched successfully.');
+        } catch (err) {
+          console.error('Vimeo info fetch error:', err);
+          setFormData(prev => ({
+            ...prev,
+            videoTitle: '',
+            videoAuthor: '',
+            videoSource: 'Vimeo',
+            videoUrl: url
+          }));
+          alert('⚠️ Could not fetch Vimeo details. Please enter them manually.');
+        }
 
       } else if (platform === 'panopto' && url.includes('panopto.com')) {
         try {
@@ -1517,6 +1575,7 @@ const LectureTemplateSystem = ({ initialData }) => {
   const [isControlPanelOpen, setIsControlPanelOpen] = useState(false);
   const [saveIndicator, setSaveIndicator] = useState({ show: false, message: '', type: '' });
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isHelpOpen, setIsHelpOpen] = useState(false);
   const [modalContentType, setModalContentType] = useState('');
   const [modalInitialData, setModalInitialData] = useState({});
   const [htmlModes, setHtmlModes] = useState({});
@@ -2671,9 +2730,12 @@ const LectureTemplateSystem = ({ initialData }) => {
         }).join('') || '';
         
         return `
-          <div class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
+          <div id="worksheet-${block.id}" class="worksheet-export my-6 p-6 bg-white border border-gray-200 rounded-lg">
             <div class="worksheet-header mb-6 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h2 class="text-xl font-bold text-gray-900 mb-2">${block.title}</h2>
+              <div class="flex items-center justify-between mb-2">
+                <h2 class="text-xl font-bold text-gray-900">${block.title}</h2>
+                <button class="no-print worksheet-print-button inline-flex items-center px-3 py-1.5 rounded bg-slate-700 text-white text-sm" onclick="printWorksheet('worksheet-${block.id}')">Print Worksheet Only</button>
+              </div>
               ${block.description ? `<p class="text-gray-700 mb-2">${block.description}</p>` : ''}
               <div class="flex items-center justify-between text-sm text-gray-600">
                 <span>Total Points: ${totalPoints}</span>
@@ -2885,8 +2947,15 @@ const LectureTemplateSystem = ({ initialData }) => {
         .toggle-icon.rotated { 
             transform: rotate(90deg); 
         }
-        body { 
+        body {
             background-color: #f9fafb;
+        }
+
+        /* EXPORT FIX: ensure accordion titles are white with no underline */
+        .section-header h2,
+        .section-header h2 a {
+            color: #fff;
+            text-decoration: none;
         }
 
         .content-container {
@@ -2932,7 +3001,27 @@ const LectureTemplateSystem = ({ initialData }) => {
       </html>
     `;
 
-    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const __PRINT_WORKSHEET_SCRIPT__ = `<script>
+function printWorksheet(worksheetId) {
+  var sourceNode = document.getElementById(worksheetId);
+  if (!sourceNode) { alert('Worksheet not found.'); return; }
+  var clone = sourceNode.cloneNode(true);
+  Array.from(clone.querySelectorAll('.no-print, .worksheet-print-button, button')).forEach(function(el){ el.remove(); });
+  var titleNode = clone.querySelector('h2, h3, .worksheet-title');
+  var title = titleNode ? titleNode.textContent.trim() : 'Worksheet';
+  var styles = '<style>@page{size:8.5in 11in;margin:0.75in;}body{font-family:Times New Roman, Times, serif;font-size:12pt;line-height:1.5;color:#000;}input,textarea,select{border:1px solid #000;padding:4px 6px;background:#fff;color:#000;font-size:11pt;}</style>';
+  var w = window.open('', '_blank');
+  if (!w) { alert('Pop-up blocked. Please enable pop-ups and try again.'); return; }
+  w.document.write('<!DOCTYPE html><html><head><meta charset="UTF-8"><title>' + title + ' - Print</title>' + styles + '</head><body>' + clone.outerHTML + '<script>window.onload=function(){setTimeout(function(){window.print();},400);};<\\/script></body></html>');
+  w.document.close();
+}
+window.printWorksheet = printWorksheet;
+</script>`;
+
+    let exportedHtml = fullHtml.replace(/<\/body>/i, __PRINT_WORKSHEET_SCRIPT__ + '</body>');
+    exportedHtml = exportedHtml.replace(/^\s*\.\s*$/gm, '');
+
+    const blob = new Blob([exportedHtml], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -3017,6 +3106,51 @@ const LectureTemplateSystem = ({ initialData }) => {
     };
     reader.readAsText(file);
     event.target.value = '';
+  };
+
+  // WORKSHEET JSON IMPORT
+  const handleWorksheetJsonImport = (blockId) => async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+
+      if (!Array.isArray(data.questions)) {
+        alert('Invalid JSON: "questions" must be an array');
+        return;
+      }
+
+      const update = {
+        ...(data.title ? { title: data.title } : {}),
+        ...(data.instructions ? { instructions: data.instructions } : {}),
+        ...(data.footerNote ? { footerNote: data.footerNote } : {}),
+        questions: data.questions.map((q, idx) => ({
+          id: q.id || `q_${Date.now()}_${idx}`,
+          type: q.type || 'shortAnswer',
+          prompt: q.prompt || '',
+          placeholder: q.placeholder || '',
+          options: Array.isArray(q.options) ? q.options : [],
+          maxLength: q.maxLength || undefined,
+          points: Number.isFinite(q.points) ? q.points : 0,
+        })),
+      };
+
+      setSections(prev => prev.map(section => ({
+        ...section,
+        blocks: section.blocks.map(b => {
+          if (b.id !== blockId) return b;
+          return { ...b, ...update };
+        })
+      })));
+
+      alert('Worksheet imported successfully.');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to parse JSON. Please check the schema.');
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleModalSave = (blockData) => {
@@ -3404,6 +3538,13 @@ const LectureTemplateSystem = ({ initialData }) => {
               <Upload size={16} />
               Load
             </button>
+            <button
+              onClick={() => setIsHelpOpen(true)}
+              className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors flex items-center gap-2"
+            >
+              <HelpCircle size={16} />
+              Help
+            </button>
             <div className="ml-auto text-sm text-gray-500">
               {openSectionIds.length}/{sections.length} open
             </div>
@@ -3426,6 +3567,7 @@ const LectureTemplateSystem = ({ initialData }) => {
             htmlModes={htmlModes}
             toggleHtmlMode={toggleHtmlMode}
             onAddBlockBelow={handleAddBlockBelow}
+            handleWorksheetJsonImport={handleWorksheetJsonImport}
           />
         ))}
       </div>
@@ -3445,6 +3587,32 @@ const LectureTemplateSystem = ({ initialData }) => {
         onSave={handleModalSave}
         initialData={modalInitialData}
       />
+
+      {isHelpOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 no-print">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-md w-full">
+            <h2 className="text-lg font-semibold mb-4">Help</h2>
+            <p className="text-sm mb-4">
+              Download an example worksheet JSON file to use with the import feature.
+            </p>
+            <a
+              href="/worksheet-example.json"
+              download
+              className="text-blue-600 underline"
+            >
+              Example worksheet JSON
+            </a>
+            <div className="mt-4 text-right">
+              <button
+                onClick={() => setIsHelpOpen(false)}
+                className="px-3 py-1 text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLogoSettings && (
         <SchoolLogoSettings onClose={() => setShowLogoSettings(false)} />

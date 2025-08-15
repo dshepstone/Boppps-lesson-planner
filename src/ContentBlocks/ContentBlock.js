@@ -63,7 +63,8 @@ const ContentBlock = ({
     htmlModes,
     toggleHtmlMode,
     onAddBlockBelow,
-    sectionId
+    sectionId,
+    handleWorksheetJsonImport
 }) => {
     const [isDragging, setIsDragging] = useState(false);
     const blockRef = useRef(null);
@@ -280,6 +281,7 @@ const ContentBlock = ({
                         isEditMode={isEditMode}
                         onBlockUpdate={onBlockUpdate}
                         isStudentView={!isEditMode}
+                        onImportJson={handleWorksheetJsonImport}
                     />
                 );
 

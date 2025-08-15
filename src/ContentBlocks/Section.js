@@ -11,7 +11,8 @@ import {
     Video,
     Image,
     Music,
-    CreditCard
+    CreditCard,
+    ClipboardList
 } from 'lucide-react';
 
 // Dropdown that allows adding blocks below the current section without being clipped by parent overflow
@@ -30,6 +31,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
         { type: 'list', icon: List, label: 'List', color: 'text-green-600' },
         { type: 'info-box', icon: AlertCircle, label: 'Info Box', color: 'text-blue-500' },
         { type: 'exercise-box', icon: AlertCircle, label: 'Exercise Box', color: 'text-emerald-500' },
+        { type: 'worksheet', icon: ClipboardList, label: 'Worksheet', color: 'text-indigo-600' },
         { type: 'warning-box', icon: AlertCircle, label: 'Warning Box', color: 'text-amber-500' },
         { type: 'video', icon: Video, label: 'Video', color: 'text-red-500' },
         { type: 'image', icon: Image, label: 'Image/Gallery', color: 'text-purple-500' },
@@ -105,7 +107,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
                   <li className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-b border-gray-100">
                       Text Content
                   </li>
-                  {options.slice(0, 7).map((option) => (
+                  {options.slice(0, 8).map((option) => (
                       <li key={option.type}>
                           <button
                               onClick={() => handleSelect(option.type)}
@@ -119,7 +121,7 @@ const AddBelowDropdown = ({ onAddContent }) => {
                   <li className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wide border-t border-gray-100 border-b border-gray-100 mt-1">
                       Media Content
                   </li>
-                  {options.slice(7).map((option) => (
+                  {options.slice(8).map((option) => (
                       <li key={option.type}>
                           <button
                               onClick={() => handleSelect(option.type)}

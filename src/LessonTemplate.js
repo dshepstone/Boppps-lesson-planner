@@ -26,6 +26,9 @@ import { TableRow } from '@tiptap/extension-table-row';
 import { TableHeader } from '@tiptap/extension-table-header';
 import { TableCell } from '@tiptap/extension-table-cell';
 import CodeBlock from '@tiptap/extension-code-block';
+import CodeMirror from '@uiw/react-codemirror';
+import { html as htmlLang } from '@codemirror/lang-html';
+import { lineNumbers } from '@codemirror/view';
 // Utility functions
 const generateId = () => 'id_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
 
@@ -246,7 +249,7 @@ const AutoSaveRecoveryModal = ({ isOpen, onRecover, onDiscard, timestamp }) => {
 const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPreviewMode = false }) => {
   const [htmlContent, setHtmlContent] = useState(content || '');
   const [htmlError, setHtmlError] = useState('');
-  const textareaRef = useRef(null);
+  const codeMirrorRef = useRef(null);
 
   const editor = useEditor({
     extensions: [
@@ -321,8 +324,7 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
     onToggleHtmlMode && onToggleHtmlMode();
   };
 
-  const handleHtmlChange = (e) => {
-    const value = e.target.value;
+  const handleHtmlChange = (value) => {
     setHtmlContent(value);
     setHtmlError('');
 
@@ -375,33 +377,20 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
     };
 
     const templateHtml = templates[template] || '';
-    const textarea = textareaRef.current;
-    if (textarea) {
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const newContent = htmlContent.substring(0, start) + templateHtml + htmlContent.substring(end);
+    const view = codeMirrorRef.current?.view;
+    if (view) {
+      const { from, to } = view.state.selection.main;
+      const tr = view.state.update({
+        changes: { from, to, insert: templateHtml },
+        selection: { anchor: from + templateHtml.length },
+      });
+      view.dispatch(tr);
+      const newContent = view.state.doc.toString();
       setHtmlContent(newContent);
       onChange && onChange(newContent);
-
-      setTimeout(() => {
-        textarea.focus();
-        textarea.setSelectionRange(start + templateHtml.length, start + templateHtml.length);
-      }, 0);
+      view.focus();
     }
   };
-
-  const autoResizeTextarea = () => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = 'auto';
-      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
-    }
-  };
-
-  useEffect(() => {
-    if (isHtmlMode && textareaRef.current) {
-      autoResizeTextarea();
-    }
-  }, [isHtmlMode, htmlContent]);
 
   const setLink = () => {
     const previousUrl = editor.getAttributes('link').href;
@@ -487,16 +476,14 @@ const RichTextEditor = ({ content, onChange, isHtmlMode, onToggleHtmlMode, isPre
             </div>
           )}
 
-          {/* HTML Textarea */}
+          {/* HTML Editor */}
           <div className="flex-1">
-            <textarea
-              ref={textareaRef}
+            <CodeMirror
+              ref={codeMirrorRef}
               value={htmlContent}
-              onChange={handleHtmlChange}
-              className="w-full min-h-96 p-4 font-mono text-sm border-none outline-none resize-none bg-gray-50"
-              style={{ fontFamily: 'Monaco, Consolas, "Courier New", monospace' }}
-              placeholder="Enter your HTML code here..."
-              onInput={autoResizeTextarea}
+              height="384px"
+              extensions={[htmlLang(), lineNumbers()]}
+              onChange={(value) => handleHtmlChange(value)}
             />
           </div>
 
@@ -1116,6 +1103,7 @@ const ControlPanel = ({
   onToggleEditMode,
   onExportPDF,
   onExportHTML,
+  onExportMobileHTML,
   onSave,
   onLoad,
   onAddSection,
@@ -1273,6 +1261,11 @@ const ControlPanel = ({
           <button onClick={onExportHTML} className="w-full p-3 bg-purple-500 hover:bg-purple-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors shadow-sm">
             <Download size={16} />
             Export Locked HTML
+          </button>
+
+          <button onClick={onExportMobileHTML} className="w-full p-3 bg-teal-500 hover:bg-teal-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors shadow-sm">
+            <Download size={16} />
+            Export Mobile HTML
           </button>
 
           <button onClick={onSave} className="w-full p-3 bg-blue-500 hover:bg-blue-600 text-white rounded-xl font-medium flex items-center justify-center gap-2 transition-colors shadow-sm">
@@ -3486,6 +3479,229 @@ const LectureTemplateSystem = ({ initialData }) => {
     showSaveIndicator('🔒 Locked HTML exported');
   };
 
+  const handleExportMobileHTML = () => {
+    showSaveIndicator('🔒 Preparing mobile HTML...', 'saving');
+    const logoHtml = getLogoHtml('logo');
+
+    const headerHtml = `
+  <header class="bg-white border-b border-gray-200">
+    <div class="max-w-md mx-auto px-4 py-6">
+      <div class="flex flex-col items-center space-y-4 text-center">
+        <p class="text-base text-gray-600">${displayDate}</p>
+        ${logoHtml ? `<div class="logo">${logoHtml}</div>` : ''}
+        <h1 class="text-2xl font-bold text-gray-900">
+          ${headerData.courseTopic.replace(/Week \\d+/, `Week ${week}`)}
+        </h1>
+        <div class="text-sm text-gray-600 space-y-1">
+          <div><span class="font-medium">Instructor:</span> ${headerData.instructorName}</div>
+          <div><span class="font-medium">Email:</span> ${headerData.instructorEmail}</div>
+        </div>
+      </div>
+    </div>
+  </header>
+`;
+
+    const navHtml = `
+<nav class="bg-white border-b border-gray-200 sticky top-0 z-40">
+  <div class="max-w-md mx-auto px-4 overflow-x-auto">
+    <ul class="flex gap-1 py-2 whitespace-nowrap">
+      ${sections.map(section => {
+        const label = studentFriendlyTitles[section.id] || section.title;
+        return `
+        <li>
+          <a
+            href="#${section.id}"
+            class="px-3 py-2 rounded-lg transition-all font-medium text-xs text-gray-700 hover:text-gray-900 hover:bg-gray-100"
+          >
+            ${label}
+          </a>
+        </li>`;
+      }).join('')}
+    </ul>
+  </div>
+</nav>
+`;
+
+    const sectionColors = {
+      'overview': { bg: 'bg-slate-600' }, 'bridge-in': { bg: 'bg-red-500' },
+      'outcomes': { bg: 'bg-emerald-500' }, 'pre-assessment': { bg: 'bg-amber-500' },
+      'participatory-learning': { bg: 'bg-blue-500' }, 'post-assessment': { bg: 'bg-purple-500' },
+      'summary': { bg: 'bg-indigo-500' }, 'resources': { bg: 'bg-gray-600' }
+    };
+
+    const sectionsHtml = sections.map(section => {
+      const label = studentFriendlyTitles[section.id] || section.title;
+      const colorConfig = sectionColors[section.id] || { bg: 'bg-slate-600' };
+      const blocksHtml = section.blocks.map(getBlockHtml).join('');
+
+      return `
+  <div id="${section.id}" class="bg-white rounded-xl shadow-sm border border-gray-200 mb-6 overflow-hidden">
+    <div class="${colorConfig.bg} text-white px-4 py-3 cursor-pointer flex justify-between items-center section-header">
+      <h2 class="text-lg font-semibold">${label}</h2>
+      <div class="toggle-icon">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <polyline points="9 18 15 12 9 6" />
+        </svg>
+      </div>
+    </div>
+    <div class="content-container closed">
+      <div>
+        <div class="p-4 text-sm">
+          ${blocksHtml}
+        </div>
+      </div>
+    </div>
+  </div>`;
+    }).join('');
+
+    const footerHtml = `
+      <footer class="bg-gray-900 text-white py-6 mt-12">
+        <div class="max-w-md mx-auto px-4 text-center text-sm">
+          <p class="mb-1 font-medium">${headerData.footerCourseInfo}</p>
+          <p class="mb-1 text-gray-300">${headerData.footerInstitution}</p>
+          <p class="text-gray-400 text-xs">${headerData.footerCopyright}</p>
+        </div>
+      </footer>
+    `;
+
+    const accordionJs = `
+      <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const smoothScrollTo = (elementY, duration = 1000) => {
+                const startingY = window.pageYOffset;
+                const diff = elementY - startingY;
+                let start;
+
+                const step = (timestamp) => {
+                    if (!start) start = timestamp;
+                    const time = timestamp - start;
+                    const percent = Math.min(time / duration, 1);
+                    const easing = percent < 0.5 ? 4 * percent * percent * percent : 1 - Math.pow(-2 * percent + 2, 3) / 2;
+                    window.scrollTo(0, startingY + diff * easing);
+                    if (time < duration) {
+                        window.requestAnimationFrame(step);
+                    }
+                }
+                window.requestAnimationFrame(step);
+            }
+
+            document.querySelectorAll('.section-header').forEach(header => {
+                header.addEventListener('click', function() {
+                    const content = this.nextElementSibling;
+                    const icon = this.querySelector('.toggle-icon');
+
+                    if (content && icon) {
+                        const isClosed = content.classList.contains('closed');
+
+                        if (isClosed) {
+                            content.classList.remove('closed');
+                            icon.classList.add('rotated');
+                        } else {
+                            content.classList.add('closed');
+                            icon.classList.remove('rotated');
+                        }
+                    }
+                });
+            });
+
+            document.querySelectorAll('nav a').forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href').substring(1);
+                    const targetSection = document.getElementById(targetId);
+
+                    if (targetSection) {
+                        const content = targetSection.querySelector('.content-container');
+                        const icon = targetSection.querySelector('.toggle-icon');
+
+                        if (content && content.classList.contains('closed')) {
+                            content.classList.remove('closed');
+                            if (icon) icon.classList.add('rotated');
+                        }
+
+                        const elementPosition = targetSection.getBoundingClientRect().top + window.pageYOffset;
+                        const offsetPosition = elementPosition - 60;
+                        smoothScrollTo(offsetPosition, 1000);
+                    }
+                });
+            });
+        });
+      </script>`;
+
+    const fixedStyles = `
+      <style>
+        .logo {
+            max-height: 80px;
+            margin-bottom: 15px;
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .toggle-icon {
+            transition: transform 0.3s ease-in-out;
+        }
+        .toggle-icon.rotated {
+            transform: rotate(90deg);
+        }
+        body {
+            background-color: #f9fafb;
+        }
+        .content-container {
+            display: grid;
+            grid-template-rows: 1fr;
+            transition: grid-template-rows 0.7s cubic-bezier(0.83, 0, 0.17, 1), opacity 0.5s ease-out;
+            opacity: 1;
+            overflow: hidden;
+        }
+        .content-container.closed {
+            grid-template-rows: 0fr;
+            opacity: 0;
+        }
+        .content-container > div {
+            min-height: 0;
+            overflow: hidden;
+        }
+        .content-container * {
+            will-change: auto;
+        }
+      </style>`;
+
+    const fullHtml = `
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Week ${week} - ${headerData.courseTopic}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        ${fixedStyles}
+      </head>
+      <body class="bg-gray-50">
+        ${headerHtml}
+        ${navHtml}
+        <div class="max-w-md mx-auto px-4 py-6">
+            ${sectionsHtml}
+        </div>
+        ${footerHtml}
+        ${accordionJs}
+      </body>
+      </html>
+    `;
+
+    const blob = new Blob([fullHtml], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `Week${week}_Lecture_${date.replace(/[^a-zA-Z0-9]/g, '_')}_Mobile.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    showSaveIndicator('🔒 Mobile HTML exported');
+  };
+
   const handleSave = () => {
     const sectionsObject = sections.reduce((obj, section) => {
       obj[section.id] = section.blocks.map(({ id, ...rest }) => rest);
@@ -3783,6 +3999,7 @@ const LectureTemplateSystem = ({ initialData }) => {
         onToggleEditMode={handleToggleEditMode}
         onExportPDF={handleExportPDF}
         onExportHTML={handleExportHTML}
+        onExportMobileHTML={handleExportMobileHTML}
         onSave={handleSave}
         onLoad={handleLoad}
         onAddSection={handleAddSection}
